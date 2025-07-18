@@ -222,7 +222,7 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
     };
 
     const baseStyle = stylePrompts[tone] || stylePrompts.whimsical;
-    const commonStyle = `${baseStyle}, high quality, detailed artwork, storybook illustration, beautiful composition`;
+    const commonStyle = `${baseStyle}, high quality, detailed artwork, storybook illustration, beautiful composition, do not include text`;
 
     // Extract story segments for different scenes
     const segments = extractStorySegments(story);
@@ -231,17 +231,17 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
       {
         name: "Scene 1",
         description: "Beginning of the story",
-        prompt: `Illustrate this scene: ${segments.beginning} | Style: ${commonStyle}, establishing shot`
+        prompt: `Illustrate this scene: ${segments.beginning} | Make it feel like the start of a fairy tale: introduce the main character(s) and setting clearly. | Style: ${commonStyle} | Composition: wide establishing shot, cinematic lighting, detailed storybook artwork.`
       },
       {
         name: "Scene 2", 
         description: "Middle of the story",
-        prompt: `Illustrate this scene: ${segments.middle} | Style: ${commonStyle}, character focus`
+        prompt: `Illustrate this scene: ${segments.middle} | Focus on the main action or conflict—show drama, movement, and emotions. | Style: ${commonStyle} | Composition: mid-shot or dynamic angle, detailed character expressions, high-quality fairy tale illustration.`
       },
       {
         name: "Scene 3",
         description: "End of the story",
-        prompt: `Illustrate this scene: ${segments.ending} | Style: ${commonStyle}, resolution scene`
+        prompt: `Illustrate this scene: ${segments.ending} | Show the resolution or magical transformation—make it feel satisfying and final. | Style: ${commonStyle}, omposition: full scene, warm and complete storybook atmosphere, polished illustration.`
       }
     ];
 
