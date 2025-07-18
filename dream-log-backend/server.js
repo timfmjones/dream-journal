@@ -141,10 +141,51 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   }
 });
 
+// Title Generation endpoint
+app.post('/api/generate-title', storyLimiter, async (req, res) => {
+  try {
+    const { dreamText } = req.body;
+
+    if (!dreamText || dreamText.trim().length === 0) {
+      return res.status(400).json({ error: 'Dream text is required' });
+    }
+
+    if (!API_CONFIG.openai.apiKey) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    const systemPrompt = `You are a creative title generator. Create a short, engaging title (3-6 words) for a fairy tale based on the dream description provided. The title should be magical, whimsical, and capture the essence of the dream. Do not use quotation marks.`;
+
+    const response = await makeAPICall(`${API_CONFIG.openai.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Create a fairy tale title for this dream: "${dreamText}"` }
+        ],
+        max_tokens: 50,
+        temperature: 0.8
+      })
+    });
+
+    const title = response.choices[0].message.content.trim();
+    res.json({ title });
+
+  } catch (error) {
+    console.error('Title generation error:', error);
+    res.status(500).json({ error: 'Failed to generate title' });
+  }
+});
+
 // Story Generation endpoint
 app.post('/api/generate-story', storyLimiter, async (req, res) => {
   try {
-    const { dreamText, tone = 'whimsical' } = req.body;
+    const { dreamText, tone = 'whimsical', length = 'medium' } = req.body;
 
     if (!dreamText || dreamText.trim().length === 0) {
       return res.status(400).json({ error: 'Dream text is required' });
@@ -163,11 +204,17 @@ app.post('/api/generate-story', storyLimiter, async (req, res) => {
       comedy: "Transform this dream into a mysterious, dark fairy tale with sarcastic humor, dramatic secrets, and absurd plot twists. Keep it atmospheric and intriguing, but make it funny, more spooky comedy than actual horror."
     };
 
+    const lengthPrompts = {
+      short: "150-250 words",
+      medium: "300-500 words", 
+      long: "600-800 words"
+    };
+
     const systemPrompt = `You are a master storyteller who specializes in transforming dreams into captivating fairy tales. ${tonePrompts[tone] || tonePrompts.whimsical}
 
 Guidelines:
 - Create a complete, well-structured fairy tale with a clear beginning, middle, and end
-- Length: 300-500 words
+- Length: ${lengthPrompts[length] || lengthPrompts.medium}
 - Include vivid descriptions and engaging dialogue
 - Make it appropriate for all ages
 - Incorporate classic fairy tale elements (magic, transformation, resolution)
@@ -186,7 +233,7 @@ Guidelines:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Transform this dream into a fairy tale: "${dreamText}"` }
         ],
-        max_tokens: 800,
+        max_tokens: length === 'long' ? 1200 : (length === 'short' ? 400 : 800),
         temperature: 0.8
       })
     });
@@ -222,7 +269,7 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
     };
 
     const baseStyle = stylePrompts[tone] || stylePrompts.whimsical;
-    const commonStyle = `${baseStyle}, high quality, detailed artwork, storybook illustration, beautiful composition, do not include text`;
+    const commonStyle = `${baseStyle}, high quality, detailed artwork, storybook illustration, beautiful composition, no text, no words, no letters, no writing, text-free illustration`;
 
     // Extract story segments for different scenes
     const segments = extractStorySegments(story);
@@ -231,17 +278,17 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
       {
         name: "Scene 1",
         description: "Beginning of the story",
-        prompt: `Illustrate this scene: ${segments.beginning} | Make it feel like the start of a fairy tale: introduce the main character(s) and setting clearly. | Style: ${commonStyle} | Composition: wide establishing shot, cinematic lighting, detailed storybook artwork.`
+        prompt: `Illustrate this scene: ${segments.beginning} | Make it feel like the start of a fairy tale: introduce the main character(s) and setting clearly. | Style: ${commonStyle} | Composition: wide establishing shot, cinematic lighting, detailed storybook artwork. IMPORTANT: Do not include any text, words, letters, or writing in the image.`
       },
       {
         name: "Scene 2", 
         description: "Middle of the story",
-        prompt: `Illustrate this scene: ${segments.middle} | Focus on the main action or conflict—show drama, movement, and emotions. | Style: ${commonStyle} | Composition: mid-shot or dynamic angle, detailed character expressions, high-quality fairy tale illustration.`
+        prompt: `Illustrate this scene: ${segments.middle} | Focus on the main action or conflict—show drama, movement, and emotions. | Style: ${commonStyle} | Composition: mid-shot or dynamic angle, detailed character expressions, high-quality fairy tale illustration. IMPORTANT: Do not include any text, words, letters, or writing in the image.`
       },
       {
         name: "Scene 3",
         description: "End of the story",
-        prompt: `Illustrate this scene: ${segments.ending} | Show the resolution or magical transformation—make it feel satisfying and final. | Style: ${commonStyle}, omposition: full scene, warm and complete storybook atmosphere, polished illustration.`
+        prompt: `Illustrate this scene: ${segments.ending} | Show the resolution or magical transformation—make it feel satisfying and final. | Style: ${commonStyle}, composition: full scene, warm and complete storybook atmosphere, polished illustration. IMPORTANT: Do not include any text, words, letters, or writing in the image.`
       }
     ];
 

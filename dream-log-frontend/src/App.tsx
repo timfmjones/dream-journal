@@ -5,7 +5,9 @@ interface Dream {
   id: number;
   originalDream: string;
   story: string;
+  title: string;
   tone: string;
+  length: string;
   date: string;
   images: { url: string; scene: string; description: string }[];
   audioBlob?: Blob;
@@ -17,8 +19,10 @@ const DreamLogApp = () => {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [currentDream, setCurrentDream] = useState('');
   const [generatedStory, setGeneratedStory] = useState('');
+  const [generatedTitle, setGeneratedTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [storyTone, setStoryTone] = useState('whimsical');
+  const [storyLength, setStoryLength] = useState('medium');
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,6 +56,12 @@ const DreamLogApp = () => {
     comedy: 'Funny & Comedic'
   };
 
+  const lengthOptions = {
+    short: 'Short',
+    medium: 'Medium',
+    long: 'Long'
+  };
+
   const generateStory = async () => {
     if (!currentDream.trim() && !audioBlob) return;
     
@@ -79,6 +89,22 @@ const DreamLogApp = () => {
         setTranscribedText(dreamText);
       }
       
+      // Generate title
+      const titleResponse = await fetch('http://localhost:3001/api/generate-title', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dreamText: dreamText,
+        }),
+      });
+      
+      if (titleResponse.ok) {
+        const titleData = await titleResponse.json();
+        setGeneratedTitle(titleData.title);
+      }
+      
       // Generate story
       const storyResponse = await fetch('http://localhost:3001/api/generate-story', {
         method: 'POST',
@@ -88,6 +114,7 @@ const DreamLogApp = () => {
         body: JSON.stringify({
           dreamText: dreamText,
           tone: storyTone,
+          length: storyLength,
         }),
       });
       
@@ -134,7 +161,9 @@ const DreamLogApp = () => {
       id: Date.now(),
       originalDream: dreamText,
       story: generatedStory,
+      title: generatedTitle || 'Untitled Dream',
       tone: storyTone,
+      length: storyLength,
       date: new Date().toLocaleDateString('en-US', { 
         month: 'short', 
         day: 'numeric', 
@@ -150,6 +179,7 @@ const DreamLogApp = () => {
     // Reset form
     setCurrentDream('');
     setGeneratedStory('');
+    setGeneratedTitle('');
     setGeneratedImages([]);
     setAudioBlob(null);
     setTranscribedText('');
@@ -352,19 +382,36 @@ const DreamLogApp = () => {
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Story Tone
-          </label>
-          <select
-            value={storyTone}
-            onChange={(e) => setStoryTone(e.target.value)}
-            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-          >
-            {Object.entries(toneOptions).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Story Tone
+            </label>
+            <select
+              value={storyTone}
+              onChange={(e) => setStoryTone(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            >
+              {Object.entries(toneOptions).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Story Length
+            </label>
+            <select
+              value={storyLength}
+              onChange={(e) => setStoryLength(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            >
+              {Object.entries(lengthOptions).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <button
@@ -388,10 +435,17 @@ const DreamLogApp = () => {
 
       {generatedStory && (
         <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 rounded-2xl shadow-xl p-6 space-y-6 border border-purple-100">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+          {generatedTitle && (
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">{generatedTitle}</h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
             <Sparkles className="w-6 h-6 text-purple-600" />
             <span>Your Fairy Tale</span>
-          </h2>
+          </h3>
           
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedStory}</p>
@@ -463,9 +517,9 @@ const DreamLogApp = () => {
             <div key={dream.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800">Dream Story</h3>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-1">{dream.title}</h3>
                   <p className="text-gray-500 text-sm">
-                    {dream.date} • {toneOptions[dream.tone as keyof typeof toneOptions]} • {dream.inputMode === 'voice' ? 'Voice Memo' : 'Text'}
+                    {dream.date} • {toneOptions[dream.tone as keyof typeof toneOptions]} • {lengthOptions[dream.length as keyof typeof lengthOptions]} • {dream.inputMode === 'voice' ? 'Voice Memo' : 'Text'}
                   </p>
                 </div>
                 {dream.audioBlob && (
@@ -523,19 +577,64 @@ const DreamLogApp = () => {
       </h2>
 
       <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default Story Tone
+            </label>
+            <select
+              value={storyTone}
+              onChange={(e) => setStoryTone(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            >
+              {Object.entries(toneOptions).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default Story Length
+            </label>
+            <select
+              value={storyLength}
+              onChange={(e) => setStoryLength(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            >
+              {Object.entries(lengthOptions).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Default Story Tone
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Story Length: {lengthOptions[storyLength as keyof typeof lengthOptions]}
           </label>
-          <select
-            value={storyTone}
-            onChange={(e) => setStoryTone(e.target.value)}
-            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-          >
-            {Object.entries(toneOptions).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="1"
+              value={storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                setStoryLength(value === 0 ? 'short' : value === 1 ? 'medium' : 'long');
+              }}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #9333ea 0%, #9333ea ${((storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2) / 2) * 100}%, #e5e7eb ${((storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2) / 2) * 100}%, #e5e7eb 100%)`
+              }}
+            />
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <span>Short</span>
+              <span>Medium</span>
+              <span>Long</span>
+            </div>
+          </div>
         </div>
 
         <div className="border-t pt-6">
@@ -560,7 +659,7 @@ const DreamLogApp = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
           <p className="text-gray-600 text-sm">
             Dream Log transforms your dreams into magical fairy tales using AI. 
-            Record your dreams through text or voice, choose a tone, and watch 
+            Record your dreams through text or voice, choose a tone and length, and watch 
             as they're transformed into enchanting stories with beautiful illustrations.
           </p>
         </div>
@@ -628,6 +727,29 @@ const DreamLogApp = () => {
         {currentView === 'journal' && renderJournal()}
         {currentView === 'settings' && renderSettings()}
       </main>
+
+      {/* Custom CSS for slider */}
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #9333ea;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #9333ea;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
     </div>
   );
 };
