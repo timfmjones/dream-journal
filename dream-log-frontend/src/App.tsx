@@ -48,7 +48,8 @@ const DreamLogApp = () => {
     mystical: 'Mystical & Magical',
     adventurous: 'Adventurous & Bold',
     gentle: 'Gentle & Soothing',
-    mysterious: 'Dark & Mysterious'
+    mysterious: 'Dark & Mysterious',
+    comedy: 'Funny & Comedic'
   };
 
   const generateStory = async () => {
