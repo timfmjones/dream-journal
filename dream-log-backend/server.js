@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+// const fetch = require('node-fetch');
 require('dotenv').config();
 
 const app = express();
@@ -81,6 +82,28 @@ async function makeAPICall(url, options) {
   return response.json();
 }
 
+// Helper function to extract story segments
+function extractStorySegments(story) {
+  const sentences = story.match(/[^.!?]+[.!?]+/g) || [];
+  const totalSentences = sentences.length;
+  
+  if (totalSentences < 3) {
+    return {
+      beginning: story,
+      middle: story,
+      ending: story
+    };
+  }
+  
+  const third = Math.floor(totalSentences / 3);
+  
+  return {
+    beginning: sentences.slice(0, third).join(' ').trim(),
+    middle: sentences.slice(third, third * 2).join(' ').trim(),
+    ending: sentences.slice(third * 2).join(' ').trim()
+  };
+}
+
 // Speech-to-Text endpoint
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   try {
@@ -93,7 +116,7 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
     }
 
     const formData = new FormData();
-    formData.append('file', new Blob([req.file.buffer], { type: req.file.mimetype }));
+    formData.append('file', new Blob([req.file.buffer], { type: req.file.mimetype }), 'audio.wav');
     formData.append('model', 'whisper-1');
     formData.append('language', 'en');
 
@@ -132,22 +155,23 @@ app.post('/api/generate-story', storyLimiter, async (req, res) => {
     }
 
     const tonePrompts = {
-      whimsical: "Transform this dream into a whimsical, playful fairy tale with magical creatures, rainbow colors, and joyful adventures. Make it feel like a Disney story.",
-      mystical: "Transform this dream into a mystical, magical fairy tale with ancient wisdom, ethereal beings, and spiritual undertones. Include elements of wonder and enlightenment.",
-      adventurous: "Transform this dream into an adventurous, bold fairy tale with brave heroes, epic quests, and thrilling challenges. Make it exciting and action-packed.",
-      gentle: "Transform this dream into a gentle, soothing fairy tale with kind characters, peaceful settings, and heartwarming moments. Make it comforting and tender.",
-      mysterious: "Transform this dream into a mysterious, dark fairy tale with shadows, secrets, and intriguing plot twists. Keep it engaging but not too scary."
+      whimsical: "Transform this dream into a whimsical, playful fairy tale with magical creatures, rainbow colors, and joyful adventures. Make it feel like a Disney story with wonder and delight.",
+      mystical: "Transform this dream into a mystical, magical fairy tale with ancient wisdom, ethereal beings, and spiritual undertones. Include elements of wonder, mystery, and enlightenment.",
+      adventurous: "Transform this dream into an adventurous, bold fairy tale with brave heroes, epic quests, and thrilling challenges. Make it exciting and action-packed with courage and triumph.",
+      gentle: "Transform this dream into a gentle, soothing fairy tale with kind characters, peaceful settings, and heartwarming moments. Make it comforting, tender, and full of love.",
+      mysterious: "Transform this dream into a mysterious, dark fairy tale with shadows, secrets, and intriguing plot twists. Keep it atmospheric and engaging but not too scary."
     };
 
     const systemPrompt = `You are a master storyteller who specializes in transforming dreams into captivating fairy tales. ${tonePrompts[tone] || tonePrompts.whimsical}
 
 Guidelines:
-- Create a complete, well-structured fairy tale (beginning, middle, end)
+- Create a complete, well-structured fairy tale with a clear beginning, middle, and end
 - Length: 300-500 words
 - Include vivid descriptions and engaging dialogue
 - Make it appropriate for all ages
 - Incorporate classic fairy tale elements (magic, transformation, resolution)
-- Use the dream as core inspiration but expand creatively`;
+- Use the dream as core inspiration but expand creatively
+- Structure the story with clear scene transitions that can be illustrated`;
 
     const response = await makeAPICall(`${API_CONFIG.openai.baseURL}/chat/completions`, {
       method: 'POST',
@@ -189,46 +213,68 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
     }
 
     const stylePrompts = {
-      whimsical: "whimsical fairy tale illustration, bright colors, Disney-style, magical and playful",
-      mystical: "mystical fairy tale artwork, ethereal lighting, fantasy art style, magical realism",
-      adventurous: "epic fantasy illustration, adventure book art style, dynamic and heroic",
-      gentle: "soft watercolor fairy tale illustration, pastel colors, gentle and peaceful",
-      mysterious: "gothic fairy tale illustration, dramatic shadows, mysterious atmosphere"
+      whimsical: "whimsical fairy tale illustration, bright vibrant colors, Disney-style animation, magical and playful, soft lighting",
+      mystical: "mystical fairy tale artwork, ethereal lighting, fantasy art style, magical realism, dreamy atmosphere",
+      adventurous: "epic fantasy illustration, adventure book art style, dynamic composition, heroic and bold",
+      gentle: "soft watercolor fairy tale illustration, pastel colors, gentle and peaceful, children's book style",
+      mysterious: "gothic fairy tale illustration, dramatic shadows, mysterious atmosphere, dark fantasy art"
     };
 
     const baseStyle = stylePrompts[tone] || stylePrompts.whimsical;
-    const commonStyle = `${baseStyle}, children's book illustration, high quality, detailed, storybook art`;
+    const commonStyle = `${baseStyle}, high quality, detailed artwork, storybook illustration, beautiful composition`;
 
-    // Generate 3 different scenes from the story
+    // Extract story segments for different scenes
+    const segments = extractStorySegments(story);
+    
     const scenes = [
-      `Beginning scene: ${story.substring(0, 200)}...`,
-      `Middle scene: ${story.substring(Math.floor(story.length * 0.4), Math.floor(story.length * 0.6))}`,
-      `Ending scene: ${story.substring(story.length - 200)}`
+      {
+        name: "Scene 1",
+        description: "Beginning of the story",
+        prompt: `Illustrate this scene: ${segments.beginning} | Style: ${commonStyle}, establishing shot`
+      },
+      {
+        name: "Scene 2", 
+        description: "Middle of the story",
+        prompt: `Illustrate this scene: ${segments.middle} | Style: ${commonStyle}, character focus`
+      },
+      {
+        name: "Scene 3",
+        description: "End of the story",
+        prompt: `Illustrate this scene: ${segments.ending} | Style: ${commonStyle}, resolution scene`
+      }
     ];
 
-    const imagePromises = scenes.map(async (scene, index) => {
-      const prompt = `${scene} | ${commonStyle}`;
-      
-      const response = await makeAPICall(`${API_CONFIG.openai.baseURL}/images/generations`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt: prompt,
-          size: '1024x1024',
-          quality: 'standard',
-          n: 1
-        })
-      });
+    const imagePromises = scenes.map(async (scene) => {
+      try {
+        const response = await makeAPICall(`${API_CONFIG.openai.baseURL}/images/generations`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'dall-e-3',
+            prompt: scene.prompt,
+            size: '1024x1024',
+            quality: 'standard',
+            n: 1
+          })
+        });
 
-      return {
-        url: response.data[0].url,
-        scene: `Scene ${index + 1}`,
-        description: scene.substring(0, 100) + '...'
-      };
+        return {
+          url: response.data[0].url,
+          scene: scene.name,
+          description: scene.description
+        };
+      } catch (error) {
+        console.error(`Error generating image for ${scene.name}:`, error);
+        return {
+          url: null,
+          scene: scene.name,
+          description: scene.description,
+          error: true
+        };
+      }
     });
 
     const images = await Promise.all(imagePromises);

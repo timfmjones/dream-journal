@@ -1,34 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, User, Settings, Book, Sparkles, Image, Save, LogIn, UserPlus, Mic, Square, Play, Pause } from 'lucide-react';
+import { Moon, Settings, Book, Sparkles, Image, Save, Mic, Square, Play, Pause, X } from 'lucide-react';
+
+interface Dream {
+  id: number;
+  originalDream: string;
+  story: string;
+  tone: string;
+  date: string;
+  images: { url: string; scene: string; description: string }[];
+  audioBlob?: Blob;
+  inputMode: 'text' | 'voice';
+}
 
 const DreamLogApp = () => {
-  const [currentView, setCurrentView] = useState('home');
-  const [user, setUser] = useState(null);
-  const [dreams, setDreams] = useState([]);
+  const [currentView, setCurrentView] = useState('create');
+  const [dreams, setDreams] = useState<Dream[]>([]);
   const [currentDream, setCurrentDream] = useState('');
   const [generatedStory, setGeneratedStory] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [storyTone, setStoryTone] = useState('whimsical');
-  const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [inputMode, setInputMode] = useState('text'); // 'text' or 'voice'
-  const [generatedImages, setGeneratedImages] = useState([]);
-  const mediaRecorderRef = useRef(null);
-  const audioRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
+  const [generatedImages, setGeneratedImages] = useState<any[]>([]);
+  const [transcribedText, setTranscribedText] = useState('');
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-  // Load dreams from memory on component mount
+  // Load dreams from localStorage on mount
   useEffect(() => {
     const savedDreams = JSON.parse(localStorage.getItem('dreamLogDreams') || '[]');
     setDreams(savedDreams);
   }, []);
 
-  // Save dreams to memory whenever dreams change
+  // Save dreams to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('dreamLogDreams', JSON.stringify(dreams));
+    if (dreams.length > 0) {
+      localStorage.setItem('dreamLogDreams', JSON.stringify(dreams));
+    }
   }, [dreams]);
 
   const toneOptions = {
@@ -63,6 +75,7 @@ const DreamLogApp = () => {
         
         const transcribeData = await transcribeResponse.json();
         dreamText = transcribeData.text;
+        setTranscribedText(dreamText);
       }
       
       // Generate story
@@ -82,6 +95,7 @@ const DreamLogApp = () => {
       }
       
       const storyData = await storyResponse.json();
+      setGeneratedStory(storyData.story);
       
       // Generate images
       const imageResponse = await fetch('http://localhost:3001/api/generate-images', {
@@ -100,8 +114,6 @@ const DreamLogApp = () => {
       }
       
       const imageData = await imageResponse.json();
-      
-      setGeneratedStory(storyData.story);
       setGeneratedImages(imageData.images);
       
     } catch (error) {
@@ -113,36 +125,35 @@ const DreamLogApp = () => {
   };
 
   const saveDream = () => {
-    if ((!currentDream.trim() && !audioBlob) || !generatedStory) return;
+    if ((!currentDream.trim() && !transcribedText) || !generatedStory) return;
     
-    const dreamText = audioBlob && inputMode === 'voice' ? 
-      "I was flying through a forest of giant mushrooms when I met a talking rabbit who gave me a golden key and told me to find the crystal castle beyond the rainbow bridge..." : 
-      currentDream;
+    const dreamText = transcribedText || currentDream;
     
-    const newDream = {
+    const newDream: Dream = {
       id: Date.now(),
       originalDream: dreamText,
       story: generatedStory,
       tone: storyTone,
-      date: new Date().toLocaleDateString(),
-      images: ['dream-image-1.jpg', 'dream-image-2.jpg', 'dream-image-3.jpg'], // Placeholder image names
-      audioBlob: audioBlob,
+      date: new Date().toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }),
+      images: generatedImages,
+      audioBlob: audioBlob || undefined,
       inputMode: inputMode
     };
     
     setDreams([newDream, ...dreams]);
+    
+    // Reset form
     setCurrentDream('');
     setGeneratedStory('');
     setGeneratedImages([]);
     setAudioBlob(null);
+    setTranscribedText('');
     setInputMode('text');
     setCurrentView('journal');
-  };
-
-  const handleAuth = (isLogin) => {
-    // Simulate authentication
-    setUser({ name: isLogin ? 'Dream Explorer' : 'New Dreamer', email: 'user@example.com' });
-    setShowAuth(false);
   };
 
   const startRecording = async () => {
@@ -206,31 +217,32 @@ const DreamLogApp = () => {
   const clearAudio = () => {
     setAudioBlob(null);
     setInputMode('text');
+    setTranscribedText('');
     stopAudio();
   };
 
-  const renderHome = () => (
+  const renderCreate = () => (
     <div className="max-w-2xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-4">
         <div className="flex justify-center">
-          <div className="bg-purple-100 p-4 rounded-full">
-            <Moon className="w-12 h-12 text-purple-600" />
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-2xl shadow-lg">
+            <Moon className="w-12 h-12 text-white" />
           </div>
         </div>
         <h1 className="text-4xl font-bold text-gray-800">Dream Log</h1>
         <p className="text-lg text-gray-600">Transform your dreams into magical fairy tales</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg p-6 space-y-6">
+      <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
         <div className="space-y-4">
           {/* Input Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex bg-gray-100 rounded-xl p-1">
             <button
               onClick={() => {
                 setInputMode('text');
                 clearAudio();
               }}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                 inputMode === 'text' 
                   ? 'bg-white text-purple-700 shadow-sm' 
                   : 'text-gray-600 hover:text-purple-600'
@@ -240,7 +252,7 @@ const DreamLogApp = () => {
             </button>
             <button
               onClick={() => setInputMode('voice')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                 inputMode === 'voice' 
                   ? 'bg-white text-purple-700 shadow-sm' 
                   : 'text-gray-600 hover:text-purple-600'
@@ -260,7 +272,7 @@ const DreamLogApp = () => {
                 value={currentDream}
                 onChange={(e) => setCurrentDream(e.target.value)}
                 placeholder="I was flying through a forest of giant mushrooms when I met a talking rabbit who gave me a golden key..."
-                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                className="w-full h-32 p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all"
               />
             </div>
           )}
@@ -272,32 +284,32 @@ const DreamLogApp = () => {
                 Record your dream
               </label>
               
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center space-y-4 bg-gray-50">
                 {!audioBlob ? (
                   <div className="space-y-4">
-                    <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center ${
-                      isRecording ? 'bg-red-100 animate-pulse' : 'bg-purple-100'
+                    <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center transition-all ${
+                      isRecording ? 'bg-red-100 animate-pulse shadow-lg' : 'bg-purple-100'
                     }`}>
-                      <Mic className={`w-10 h-10 ${isRecording ? 'text-red-600' : 'text-purple-600'}`} />
+                      <Mic className={`w-12 h-12 ${isRecording ? 'text-red-600' : 'text-purple-600'}`} />
                     </div>
                     
                     {isRecording ? (
-                      <div className="space-y-2">
-                        <p className="text-red-600 font-medium">Recording...</p>
+                      <div className="space-y-3">
+                        <p className="text-red-600 font-medium animate-pulse">Recording...</p>
                         <button
                           onClick={stopRecording}
-                          className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2 mx-auto"
+                          className="bg-red-600 text-white px-6 py-2.5 rounded-xl hover:bg-red-700 flex items-center space-x-2 mx-auto transition-all shadow-md"
                         >
                           <Square className="w-4 h-4" />
                           <span>Stop Recording</span>
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <p className="text-gray-600">Tap to record your dream</p>
                         <button
                           onClick={startRecording}
-                          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 flex items-center space-x-2 mx-auto"
+                          className="bg-purple-600 text-white px-6 py-2.5 rounded-xl hover:bg-purple-700 flex items-center space-x-2 mx-auto transition-all shadow-md"
                         >
                           <Mic className="w-4 h-4" />
                           <span>Start Recording</span>
@@ -307,23 +319,26 @@ const DreamLogApp = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="w-20 h-20 rounded-full bg-green-100 mx-auto flex items-center justify-center">
-                      <Mic className="w-10 h-10 text-green-600" />
+                    <div className="w-24 h-24 rounded-full bg-green-100 mx-auto flex items-center justify-center">
+                      <Mic className="w-12 h-12 text-green-600" />
                     </div>
                     
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <p className="text-green-600 font-medium">Recording saved!</p>
+                      {transcribedText && (
+                        <p className="text-sm text-gray-600 italic px-4">"{transcribedText}"</p>
+                      )}
                       <div className="flex justify-center space-x-3">
                         <button
                           onClick={isPlaying ? stopAudio : playAudio}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 flex items-center space-x-2 transition-all shadow-md"
                         >
                           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                           <span>{isPlaying ? 'Pause' : 'Play'}</span>
                         </button>
                         <button
                           onClick={clearAudio}
-                          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                          className="bg-gray-600 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition-all shadow-md"
                         >
                           Re-record
                         </button>
@@ -343,7 +358,7 @@ const DreamLogApp = () => {
           <select
             value={storyTone}
             onChange={(e) => setStoryTone(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           >
             {Object.entries(toneOptions).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
@@ -354,7 +369,7 @@ const DreamLogApp = () => {
         <button
           onClick={generateStory}
           disabled={(!currentDream.trim() && !audioBlob) || isGenerating}
-          className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
         >
           {isGenerating ? (
             <>
@@ -371,57 +386,51 @@ const DreamLogApp = () => {
       </div>
 
       {generatedStory && (
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-6 space-y-6">
+        <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 rounded-2xl shadow-xl p-6 space-y-6 border border-purple-100">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
             <Sparkles className="w-6 h-6 text-purple-600" />
             <span>Your Fairy Tale</span>
           </h2>
           
-          <div className="bg-white p-4 rounded-lg">
-            <p className="text-gray-700 leading-relaxed">{generatedStory}</p>
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedStory}</p>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
-              <Image className="w-5 h-5 text-purple-600" />
-              <span>Generated Images</span>
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              {generatedImages.length > 0 ? (
-                generatedImages.map((image, i) => (
-                  <div key={i} className="aspect-square rounded-lg overflow-hidden shadow-md">
-                    {image.error ? (
-                      <div className="aspect-square bg-red-100 rounded-lg flex items-center justify-center">
-                        <div className="text-center text-red-600">
-                          <Image className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-sm">Failed to generate</p>
+          {generatedImages.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                <Image className="w-5 h-5 text-purple-600" />
+                <span>Story Illustrations</span>
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                {generatedImages.map((image, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
+                      {image.url ? (
+                        <img 
+                          src={image.url} 
+                          alt={image.description}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-center text-gray-400">
+                            <Image className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-xs">Loading...</p>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <img 
-                        src={image.url} 
-                        alt={`Dream illustration ${i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                ))
-              ) : (
-                [1, 2, 3].map((i) => (
-                  <div key={i} className="aspect-square bg-gradient-to-br from-purple-200 to-pink-200 rounded-lg flex items-center justify-center">
-                    <div className="text-center text-gray-600">
-                      <Image className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-sm">Generating...</p>
+                      )}
                     </div>
+                    <p className="text-xs text-gray-600 text-center">{image.scene}</p>
                   </div>
-                ))
-              )}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             onClick={saveDream}
-            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 flex items-center justify-center space-x-2"
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
           >
             <Save className="w-5 h-5" />
             <span>Save to Journal</span>
@@ -442,30 +451,30 @@ const DreamLogApp = () => {
       </div>
 
       {dreams.length === 0 ? (
-        <div className="text-center py-12">
-          <Moon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <div className="text-center py-16">
+          <Moon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">No dreams recorded yet</p>
-          <p className="text-gray-400">Start by sharing a dream on the home page</p>
+          <p className="text-gray-400">Start by creating your first dream story</p>
         </div>
       ) : (
         <div className="space-y-6">
           {dreams.map((dream) => (
-            <div key={dream.id} className="bg-white rounded-lg shadow-lg p-6">
+            <div key={dream.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-800">Dream Story</h3>
                   <p className="text-gray-500 text-sm">
-                    {dream.date} • {toneOptions[dream.tone]} • {dream.inputMode === 'voice' ? 'Voice Memo' : 'Text'}
+                    {dream.date} • {toneOptions[dream.tone as keyof typeof toneOptions]} • {dream.inputMode === 'voice' ? 'Voice Memo' : 'Text'}
                   </p>
                 </div>
                 {dream.audioBlob && (
                   <button
                     onClick={() => {
-                      const audioUrl = URL.createObjectURL(dream.audioBlob);
+                      const audioUrl = URL.createObjectURL(dream.audioBlob!);
                       const audio = new Audio(audioUrl);
                       audio.play();
                     }}
-                    className="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm hover:bg-blue-200 flex items-center space-x-1"
+                    className="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200 flex items-center space-x-1 transition-colors"
                   >
                     <Play className="w-3 h-3" />
                     <span>Play</span>
@@ -476,24 +485,27 @@ const DreamLogApp = () => {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">Original Dream:</h4>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{dream.originalDream}</p>
+                  <p className="text-gray-600 bg-gray-50 p-4 rounded-xl">{dream.originalDream}</p>
                 </div>
                 
                 <div>
                   <h4 className="font-medium text-gray-700 mb-2">Fairy Tale:</h4>
-                  <p className="text-gray-700 leading-relaxed">{dream.story}</p>
+                  <p className="text-gray-700 leading-relaxed line-clamp-4">{dream.story}</p>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="aspect-square bg-gradient-to-br from-purple-200 to-pink-200 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-gray-600">
-                        <Image className="w-6 h-6 mx-auto mb-1" />
-                        <p className="text-xs">Image {i}</p>
+                {dream.images && dream.images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3">
+                    {dream.images.map((image, i) => (
+                      <div key={i} className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
+                        <img 
+                          src={image.url} 
+                          alt={image.description}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -509,7 +521,7 @@ const DreamLogApp = () => {
         <span>Settings</span>
       </h2>
 
-      <div className="bg-white rounded-lg shadow-lg p-6 space-y-6">
+      <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Default Story Tone
@@ -517,7 +529,7 @@ const DreamLogApp = () => {
           <select
             value={storyTone}
             onChange={(e) => setStoryTone(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
           >
             {Object.entries(toneOptions).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
@@ -526,87 +538,30 @@ const DreamLogApp = () => {
         </div>
 
         <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Account</h3>
-          {user ? (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-medium text-gray-800">{user.name}</p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setUser(null)}
-                className="text-red-600 hover:text-red-800 text-sm"
-              >
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-gray-600">You're using Dream Log as a guest</p>
-              <button
-                onClick={() => setShowAuth(true)}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-              >
-                Create Account / Sign In
-              </button>
-            </div>
-          )}
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Management</h3>
+          <div className="space-y-3">
+            <p className="text-gray-600">Total dreams saved: {dreams.length}</p>
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to clear all dreams? This cannot be undone.')) {
+                  setDreams([]);
+                  localStorage.removeItem('dreamLogDreams');
+                }
+              }}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              Clear All Dreams
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-  );
 
-  const renderAuth = () => (
-    <div className="max-w-md mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {authMode === 'login' ? 'Welcome Back' : 'Join Dream Log'}
-          </h2>
-          <p className="text-gray-600 mt-2">
-            {authMode === 'login' ? 'Sign in to access your dreams' : 'Create an account to save your dreams'}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
+          <p className="text-gray-600 text-sm">
+            Dream Log transforms your dreams into magical fairy tales using AI. 
+            Record your dreams through text or voice, choose a tone, and watch 
+            as they're transformed into enchanting stories with beautiful illustrations.
           </p>
-        </div>
-
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-          
-          <button
-            onClick={() => handleAuth(authMode === 'login')}
-            className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700"
-          >
-            {authMode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
-        </div>
-
-        <div className="text-center">
-          <button
-            onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-            className="text-purple-600 hover:text-purple-800 text-sm"
-          >
-            {authMode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-          </button>
-        </div>
-
-        <div className="text-center">
-          <button
-            onClick={() => setShowAuth(false)}
-            className="text-gray-500 hover:text-gray-700 text-sm"
-          >
-            Continue as Guest
-          </button>
         </div>
       </div>
     </div>
@@ -615,21 +570,23 @@ const DreamLogApp = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-purple-600 p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-2 rounded-xl shadow-md">
                 <Moon className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-xl font-bold text-gray-800">Dream Log</h1>
             </div>
             
-            <nav className="flex items-center space-x-6">
+            <nav className="flex items-center space-x-2">
               <button
-                onClick={() => setCurrentView('home')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  currentView === 'home' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-purple-600'
+                onClick={() => setCurrentView('create')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+                  currentView === 'create' 
+                    ? 'bg-purple-100 text-purple-700 shadow-sm' 
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
                 }`}
               >
                 <Sparkles className="w-4 h-4" />
@@ -638,8 +595,10 @@ const DreamLogApp = () => {
               
               <button
                 onClick={() => setCurrentView('journal')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  currentView === 'journal' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-purple-600'
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+                  currentView === 'journal' 
+                    ? 'bg-purple-100 text-purple-700 shadow-sm' 
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
                 }`}
               >
                 <Book className="w-4 h-4" />
@@ -648,8 +607,10 @@ const DreamLogApp = () => {
               
               <button
                 onClick={() => setCurrentView('settings')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  currentView === 'settings' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-purple-600'
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+                  currentView === 'settings' 
+                    ? 'bg-purple-100 text-purple-700 shadow-sm' 
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -662,10 +623,9 @@ const DreamLogApp = () => {
 
       {/* Main Content */}
       <main className="py-8">
-        {showAuth ? renderAuth() : 
-         currentView === 'home' ? renderHome() :
-         currentView === 'journal' ? renderJournal() :
-         renderSettings()}
+        {currentView === 'create' && renderCreate()}
+        {currentView === 'journal' && renderJournal()}
+        {currentView === 'settings' && renderSettings()}
       </main>
     </div>
   );
