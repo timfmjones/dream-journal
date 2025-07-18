@@ -29,6 +29,7 @@ const DreamLogApp = () => {
   const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
   const [generatedImages, setGeneratedImages] = useState<any[]>([]);
   const [transcribedText, setTranscribedText] = useState('');
+  const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -512,58 +513,143 @@ const DreamLogApp = () => {
           <p className="text-gray-400">Start by creating your first dream story</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {dreams.map((dream) => (
-            <div key={dream.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-1">{dream.title}</h3>
-                  <p className="text-gray-500 text-sm">
-                    {dream.date} • {toneOptions[dream.tone as keyof typeof toneOptions]} • {lengthOptions[dream.length as keyof typeof lengthOptions]} • {dream.inputMode === 'voice' ? 'Voice Memo' : 'Text'}
-                  </p>
-                </div>
-                {dream.audioBlob && (
-                  <button
-                    onClick={() => {
-                      const audioUrl = URL.createObjectURL(dream.audioBlob!);
-                      const audio = new Audio(audioUrl);
-                      audio.play();
-                    }}
-                    className="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200 flex items-center space-x-1 transition-colors"
-                  >
-                    <Play className="w-3 h-3" />
-                    <span>Play</span>
-                  </button>
-                )}
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Original Dream:</h4>
-                  <p className="text-gray-600 bg-gray-50 p-4 rounded-xl">{dream.originalDream}</p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-700 mb-2">Fairy Tale:</h4>
-                  <p className="text-gray-700 leading-relaxed line-clamp-4">{dream.story}</p>
-                </div>
-                
-                {dream.images && dream.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3">
-                    {dream.images.map((image, i) => (
-                      <div key={i} className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
-                        <img 
-                          src={image.url} 
-                          alt={image.description}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+            <div key={dream.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+              {/* Dream List Item */}
+              <div 
+                className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setSelectedDream(dream)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{dream.title}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>{dream.date}</span>
+                      <span>•</span>
+                      <span>{toneOptions[dream.tone as keyof typeof toneOptions]}</span>
+                      <span>•</span>
+                      <span>{lengthOptions[dream.length as keyof typeof lengthOptions]}</span>
+                      <span>•</span>
+                      <span className="flex items-center space-x-1">
+                        {dream.inputMode === 'voice' ? (
+                          <>
+                            <Mic className="w-3 h-3" />
+                            <span>Voice Memo</span>
+                          </>
+                        ) : (
+                          <span>Text</span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                )}
+                  <div className="text-purple-600 hover:text-purple-800 transition-colors">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Dream Detail Modal */}
+      {selectedDream && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedDream.title}</h2>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>{selectedDream.date}</span>
+                    <span>•</span>
+                    <span>{toneOptions[selectedDream.tone as keyof typeof toneOptions]}</span>
+                    <span>•</span>
+                    <span>{lengthOptions[selectedDream.length as keyof typeof lengthOptions]}</span>
+                    <span>•</span>
+                    <span className="flex items-center space-x-1">
+                      {selectedDream.inputMode === 'voice' ? (
+                        <>
+                          <Mic className="w-3 h-3" />
+                          <span>Voice Memo</span>
+                        </>
+                      ) : (
+                        <span>Text</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {selectedDream.audioBlob && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const audioUrl = URL.createObjectURL(selectedDream.audioBlob!);
+                        const audio = new Audio(audioUrl);
+                        audio.play();
+                      }}
+                      className="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200 flex items-center space-x-1 transition-colors"
+                    >
+                      <Play className="w-3 h-3" />
+                      <span>Play</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedDream(null)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Original Dream */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Original Dream</h3>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-gray-700 leading-relaxed">{selectedDream.originalDream}</p>
+                </div>
+              </div>
+
+              {/* Generated Fairy Tale */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Generated Fairy Tale</h3>
+                <div className="fairy-tale-content p-6 rounded-xl shadow-sm">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.story}</p>
+                </div>
+              </div>
+
+              {/* Images */}
+              {selectedDream.images && selectedDream.images.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                    <Image className="w-5 h-5 text-purple-600" />
+                    <span>Story Illustrations</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {selectedDream.images.map((image, i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
+                          <img 
+                            src={image.url} 
+                            alt={image.description}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <p className="text-sm text-gray-600 text-center font-medium">{image.scene}</p>
+                        <p className="text-xs text-gray-500 text-center">{image.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -668,13 +754,13 @@ const DreamLogApp = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100">
+    <div className="min-h-screen main-gradient-bg">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-2 rounded-xl shadow-md">
+              <div className="header-gradient-bg p-2 rounded-xl shadow-md">
                 <Moon className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-xl font-bold text-gray-800">Dream Log</h1>
@@ -727,29 +813,6 @@ const DreamLogApp = () => {
         {currentView === 'journal' && renderJournal()}
         {currentView === 'settings' && renderSettings()}
       </main>
-
-      {/* Custom CSS for slider */}
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #9333ea;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #9333ea;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-      `}</style>
     </div>
   );
 };

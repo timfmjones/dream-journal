@@ -14,3 +14,69 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Custom gradient backgrounds */
+.dream-gradient-bg {
+  background: linear-gradient(135deg, #faf5ff 0%, #fdf2f8 50%, #eef2ff 100%);
+}
+
+.main-gradient-bg {
+  background: linear-gradient(135deg, #f3e8ff 0%, #fce7f3 50%, #e0e7ff 100%);
+}
+
+.header-gradient-bg {
+  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+}
+
+.button-gradient-bg {
+  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+}
+
+.button-gradient-bg:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%);
+}
+
+/* Custom slider styles */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #9333ea;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #9333ea;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Dream card hover effects */
+.dream-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.dream-card:hover {
+  background-color: #faf5ff;
+  border-left: 4px solid #d8b4fe;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Fairy tale content styling */
+.fairy-tale-content {
+  background: linear-gradient(135deg, #faf5ff 0%, #fdf2f8 50%, #eef2ff 100%);
+  border: 1px solid #d8b4fe;
+}
