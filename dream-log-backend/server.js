@@ -6,8 +6,10 @@ const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-// const fetch = require('node-fetch');
+const { verifyToken, requireAuth } = require('./middleware/auth');
+const { db } = require('./config/firebase-admin');
 require('dotenv').config();
+console.log("ENV Loaded?", process.env.FIREBASE_PROJECT_ID); // should NOT be undefined
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -109,6 +111,107 @@ function extractStorySegments(story) {
     ending: sentences.slice(third * 2).join(' ').trim()
   };
 }
+
+// Dreams endpoints with optional auth
+app.get('/api/dreams', verifyToken, async (req, res) => {
+  try {
+    if (!req.user) {
+      // Guest mode - no saved dreams from server
+      return res.json({ dreams: [] });
+    }
+
+    const dreamsSnapshot = await db.collection('dreams')
+      .where('userId', '==', req.user.uid)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const dreams = [];
+    dreamsSnapshot.forEach(doc => {
+      dreams.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.json({ dreams });
+  } catch (error) {
+    console.error('Error fetching dreams:', error);
+    res.status(500).json({ error: 'Failed to fetch dreams' });
+  }
+});
+
+app.post('/api/dreams', verifyToken, async (req, res) => {
+  try {
+    if (!req.user) {
+      // Guest mode - don't save to server
+      return res.json({ 
+        success: true, 
+        message: 'Dream saved locally (guest mode)',
+        dream: { ...req.body, id: Date.now().toString() }
+      });
+    }
+
+    const dreamData = {
+      ...req.body,
+      userId: req.user.uid,
+      userEmail: req.user.email,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const docRef = await db.collection('dreams').add(dreamData);
+    
+    res.json({ 
+      success: true, 
+      dream: { id: docRef.id, ...dreamData }
+    });
+  } catch (error) {
+    console.error('Error saving dream:', error);
+    res.status(500).json({ error: 'Failed to save dream' });
+  }
+});
+
+app.put('/api/dreams/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = {
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Verify ownership
+    const dreamDoc = await db.collection('dreams').doc(id).get();
+    if (!dreamDoc.exists || dreamDoc.data().userId !== req.user.uid) {
+      return res.status(404).json({ error: 'Dream not found' });
+    }
+
+    await db.collection('dreams').doc(id).update(updates);
+    
+    res.json({ 
+      success: true, 
+      dream: { id, ...dreamDoc.data(), ...updates }
+    });
+  } catch (error) {
+    console.error('Error updating dream:', error);
+    res.status(500).json({ error: 'Failed to update dream' });
+  }
+});
+
+app.delete('/api/dreams/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify ownership
+    const dreamDoc = await db.collection('dreams').doc(id).get();
+    if (!dreamDoc.exists || dreamDoc.data().userId !== req.user.uid) {
+      return res.status(404).json({ error: 'Dream not found' });
+    }
+
+    await db.collection('dreams').doc(id).delete();
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting dream:', error);
+    res.status(500).json({ error: 'Failed to delete dream' });
+  }
+});
 
 // Speech-to-Text endpoint
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
@@ -397,7 +500,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     apis: {
       openai: !!API_CONFIG.openai.apiKey,
-      stability: !!API_CONFIG.stability.apiKey
+      stability: !!API_CONFIG.stability.apiKey,
+      firebase: !!process.env.FIREBASE_PROJECT_ID
     }
   });
 });
@@ -417,4 +521,5 @@ app.listen(PORT, () => {
   console.log(`Dream Log Backend running on port ${PORT}`);
   console.log(`OpenAI API: ${API_CONFIG.openai.apiKey ? 'Configured' : 'Not configured'}`);
   console.log(`Stability API: ${API_CONFIG.stability.apiKey ? 'Configured' : 'Not configured'}`);
+  console.log(`Firebase Admin: ${process.env.FIREBASE_PROJECT_ID ? 'Configured' : 'Not configured'}`);
 });
