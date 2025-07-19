@@ -7,6 +7,13 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+// Logo Component
+const DreamLogLogo: React.FC<{ size?: 'small' | 'large' }> = ({ size = 'small' }) => (
+  <div className={`logo-container ${size === 'large' ? 'large' : ''}`}>
+    <div className={`logo-icon ${size === 'large' ? 'large' : ''}`} />
+  </div>
+);
+
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { signInWithGoogle, continueAsGuest } = useAuth();
 
@@ -38,9 +45,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         <div className="text-center space-y-6">
           <div className="flex justify-center">
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-2xl shadow-lg">
-              <User className="w-12 h-12 text-white" />
-            </div>
+            <DreamLogLogo size="large" />
           </div>
 
           <div>

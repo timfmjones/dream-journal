@@ -19,6 +19,13 @@ interface Dream {
   userEmail?: string;
 }
 
+// Logo Component
+const DreamLogLogo: React.FC<{ size?: 'small' | 'large' }> = ({ size = 'small' }) => (
+  <div className={`logo-container ${size === 'large' ? 'large' : ''}`}>
+    <div className={`logo-icon ${size === 'large' ? 'large' : ''}`} />
+  </div>
+);
+
 const DreamLogApp = () => {
   const { user, isGuest, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -502,21 +509,19 @@ const DreamLogApp = () => {
   };
 
   const renderCreate = () => (
-    <div className="max-w-2xl mx-auto p-6 space-y-8">
+    <div className="container-narrow mx-auto content-container py-8 space-y-8">
       <div className="text-center space-y-4">
         <div className="flex justify-center">
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-2xl shadow-lg">
-            <Moon className="w-12 h-12 text-white" />
-          </div>
+          <DreamLogLogo size="large" />
         </div>
         <h1 className="text-4xl font-bold text-gray-800">Dream Log</h1>
         <p className="text-lg text-gray-600">Transform your dreams into magical fairy tales</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
-        <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
+        <div className="form-section">
           {/* Input Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-xl p-1">
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
             <button
               onClick={() => {
                 setInputMode('text');
@@ -608,7 +613,7 @@ const DreamLogApp = () => {
                       {transcribedText && (
                         <p className="text-sm text-gray-600 italic px-4">"{transcribedText}"</p>
                       )}
-                      <div className="flex justify-center space-x-3">
+                      <div className="button-group justify-center">
                         <button
                           onClick={isPlaying ? stopAudio : playAudio}
                           className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 flex items-center space-x-2 transition-all shadow-md"
@@ -632,729 +637,733 @@ const DreamLogApp = () => {
         </div>
 
         {/* Generation Options */}
-        <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="form-section">
+          <label className="block text-sm font-medium text-gray-700 mb-4">
             What would you like to create?
           </label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="generation-mode-grid">
             <button
               onClick={() => setGenerationMode('story')}
-className={`p-3 rounded-xl border-2 transition-all ${
-               generationMode === 'story' 
-                 ? 'border-purple-500 bg-purple-50 text-purple-700' 
-                 : 'border-gray-200 hover:border-purple-300'
-             }`}
-           >
-             <Wand2 className="w-5 h-5 mx-auto mb-1" />
-             <span className="text-sm font-medium">Fairy Tale</span>
-           </button>
-           <button
-             onClick={() => setGenerationMode('analysis')}
-             className={`p-3 rounded-xl border-2 transition-all ${
-               generationMode === 'analysis' 
-                 ? 'border-purple-500 bg-purple-50 text-purple-700' 
-                 : 'border-gray-200 hover:border-purple-300'
-             }`}
-           >
-             <Brain className="w-5 h-5 mx-auto mb-1" />
-             <span className="text-sm font-medium">Analysis</span>
-           </button>
-           <button
-             onClick={() => setGenerationMode('none')}
-             className={`p-3 rounded-xl border-2 transition-all ${
-               generationMode === 'none' 
-                 ? 'border-purple-500 bg-purple-50 text-purple-700' 
-                 : 'border-gray-200 hover:border-purple-300'
-             }`}
-           >
-             <Save className="w-5 h-5 mx-auto mb-1" />
-             <span className="text-sm font-medium">Just Save</span>
-           </button>
-         </div>
-       </div>
+              className={`p-4 rounded-xl border-2 transition-all ${
+                generationMode === 'story' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              <Wand2 className="w-6 h-6 mx-auto mb-2" />
+              <span className="text-sm font-medium block">Fairy Tale</span>
+            </button>
+            <button
+              onClick={() => setGenerationMode('analysis')}
+              className={`p-4 rounded-xl border-2 transition-all ${
+                generationMode === 'analysis' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              <Brain className="w-6 h-6 mx-auto mb-2" />
+              <span className="text-sm font-medium block">Analysis</span>
+            </button>
+            <button
+              onClick={() => setGenerationMode('none')}
+              className={`p-4 rounded-xl border-2 transition-all ${
+                generationMode === 'none' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              <Save className="w-6 h-6 mx-auto mb-2" />
+              <span className="text-sm font-medium block">Just Save</span>
+            </button>
+          </div>
+        </div>
 
-       {generationMode === 'story' && (
-         <div className="grid grid-cols-2 gap-4">
-           <div>
-             <label className="block text-sm font-medium text-gray-700 mb-2">
-               Story Tone
-             </label>
-             <select
-               value={storyTone}
-               onChange={(e) => setStoryTone(e.target.value)}
-               className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-             >
-               {Object.entries(toneOptions).map(([key, label]) => (
-                 <option key={key} value={key}>{label}</option>
-               ))}
-             </select>
-           </div>
+        {generationMode === 'story' && (
+          <div className="form-section">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Story Tone
+                </label>
+                <select
+                  value={storyTone}
+                  onChange={(e) => setStoryTone(e.target.value)}
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
+                  {Object.entries(toneOptions).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
 
-           <div>
-             <label className="block text-sm font-medium text-gray-700 mb-2">
-               Story Length
-             </label>
-             <select
-               value={storyLength}
-               onChange={(e) => setStoryLength(e.target.value)}
-               className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-             >
-               {Object.entries(lengthOptions).map(([key, label]) => (
-                 <option key={key} value={key}>{label}</option>
-               ))}
-             </select>
-           </div>
-         </div>
-       )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Story Length
+                </label>
+                <select
+                  value={storyLength}
+                  onChange={(e) => setStoryLength(e.target.value)}
+                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                >
+                  {Object.entries(lengthOptions).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
-       <div className="flex space-x-3">
-         {generationMode === 'story' && (
-           <button
-             onClick={() => generateStory()}
-             disabled={(!currentDream.trim() && !audioBlob) || isGenerating}
-             className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
-           >
-             {isGenerating ? (
-               <>
-                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                 <span>Creating fairy tale...</span>
-               </>
-             ) : (
-               <>
-                 <Wand2 className="w-5 h-5" />
-                 <span>Generate Fairy Tale</span>
-               </>
-             )}
-           </button>
-         )}
+        <div className="button-group">
+          {generationMode === 'story' && (
+            <button
+              onClick={() => generateStory()}
+              disabled={(!currentDream.trim() && !audioBlob) || isGenerating}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Creating fairy tale...</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5" />
+                  <span>Generate Fairy Tale</span>
+                </>
+              )}
+            </button>
+          )}
 
-         {generationMode === 'analysis' && (
-           <button
-             onClick={() => analyzeDream()}
-             disabled={(!currentDream.trim() && !audioBlob) || isAnalyzing}
-             className="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
-           >
-             {isAnalyzing ? (
-               <>
-                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                 <span>Analyzing dream...</span>
-               </>
-             ) : (
-               <>
-                 <Brain className="w-5 h-5" />
-                 <span>Analyze Dream</span>
-               </>
-             )}
-           </button>
-         )}
+          {generationMode === 'analysis' && (
+            <button
+              onClick={() => analyzeDream()}
+              disabled={(!currentDream.trim() && !audioBlob) || isAnalyzing}
+              className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Analyzing dream...</span>
+                </>
+              ) : (
+                <>
+                  <Brain className="w-5 h-5" />
+                  <span>Analyze Dream</span>
+                </>
+              )}
+            </button>
+          )}
 
-         {generationMode === 'none' && (
-           <button
-             onClick={saveDream}
-             disabled={!currentDream.trim() && !audioBlob}
-             className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
-           >
-             <Save className="w-5 h-5" />
-             <span>Save Dream</span>
-           </button>
-         )}
-       </div>
-     </div>
+          {generationMode === 'none' && (
+            <button
+              onClick={saveDream}
+              disabled={!currentDream.trim() && !audioBlob}
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+            >
+              <Save className="w-5 h-5" />
+              <span>Save Dream</span>
+            </button>
+          )}
+        </div>
+      </div>
 
-     {/* Generated Story */}
-     {generatedStory && (
-       <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 rounded-2xl shadow-xl p-6 space-y-6 border border-purple-100">
-         {generatedTitle && (
-           <div className="text-center">
-             <h2 className="text-3xl font-bold text-gray-800 mb-2">{generatedTitle}</h2>
-             <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
-           </div>
-         )}
-         
-         <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-           <Sparkles className="w-6 h-6 text-purple-600" />
-           <span>Your Fairy Tale</span>
-         </h3>
-         
-         <div className="bg-white p-6 rounded-xl shadow-sm">
-           <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedStory}</p>
-         </div>
+      {/* Generated Story */}
+      {generatedStory && (
+        <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 rounded-2xl shadow-xl p-8 space-y-6 border border-purple-100 fade-in">
+          {generatedTitle && (
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">{generatedTitle}</h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
+            <Sparkles className="w-6 h-6 text-purple-600" />
+            <span>Your Fairy Tale</span>
+          </h3>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedStory}</p>
+          </div>
 
-         {generatedImages.length > 0 && (
-           <div className="space-y-3">
-             <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
-               <Image className="w-5 h-5 text-purple-600" />
-               <span>Story Illustrations</span>
-             </h3>
-             <div className="grid grid-cols-3 gap-4">
-               {generatedImages.map((image, i) => (
-                 <div key={i} className="space-y-2">
-                   <div className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
-                     {image.url ? (
-                       <img 
-                         src={image.url} 
-                         alt={image.description}
-                         className="w-full h-full object-cover"
-                       />
-                     ) : (
-                       <div className="w-full h-full flex items-center justify-center">
-                         <div className="text-center text-gray-400">
-                           <Image className="w-8 h-8 mx-auto mb-2" />
-                           <p className="text-xs">Loading...</p>
-                         </div>
-                       </div>
-                     )}
-                   </div>
-                   <p className="text-xs text-gray-600 text-center">{image.scene}</p>
-                 </div>
-               ))}
-             </div>
-           </div>
-         )}
+          {generatedImages.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                <Image className="w-5 h-5 text-purple-600" />
+                <span>Story Illustrations</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {generatedImages.map((image, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
+                      {image.url ? (
+                        <img 
+                          src={image.url} 
+                          alt={image.description}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-center text-gray-400">
+                            <Image className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-xs">Loading...</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 text-center font-medium">{image.scene}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-         <button
-           onClick={saveDream}
-           className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
-         >
-           <Save className="w-5 h-5" />
-           <span>Save to Journal</span>
-         </button>
-       </div>
-     )}
+          <button
+            onClick={saveDream}
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
+          >
+            <Save className="w-5 h-5" />
+            <span>Save to Journal</span>
+          </button>
+        </div>
+      )}
 
-     {/* Generated Analysis */}
-     {generatedAnalysis && (
-       <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl p-6 space-y-6 border border-indigo-100">
-         {generatedTitle && (
-           <div className="text-center">
-             <h2 className="text-3xl font-bold text-gray-800 mb-2">{generatedTitle}</h2>
-             <div className="w-16 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full"></div>
-           </div>
-         )}
-         
-         <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-           <Brain className="w-6 h-6 text-indigo-600" />
-           <span>Dream Analysis</span>
-         </h3>
-         
-         <div className="bg-white p-6 rounded-xl shadow-sm">
-           <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedAnalysis}</p>
-         </div>
+      {/* Generated Analysis */}
+      {generatedAnalysis && (
+        <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl p-8 space-y-6 border border-indigo-100 fade-in">
+          {generatedTitle && (
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">{generatedTitle}</h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full"></div>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
+            <Brain className="w-6 h-6 text-indigo-600" />
+            <span>Dream Analysis</span>
+          </h3>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedAnalysis}</p>
+          </div>
 
-         <button
-           onClick={saveDream}
-           className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
-         >
-           <Save className="w-5 h-5" />
-           <span>Save to Journal</span>
-         </button>
-       </div>
-     )}
-   </div>
- );
+          <button
+            onClick={saveDream}
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
+          >
+            <Save className="w-5 h-5" />
+            <span>Save to Journal</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
- const renderJournal = () => (
-   <div className="max-w-4xl mx-auto p-6 space-y-6">
-     <div className="text-center">
-       <h2 className="text-3xl font-bold text-gray-800 flex items-center justify-center space-x-2">
-         <Book className="w-8 h-8 text-purple-600" />
-         <span>Dream Journal</span>
-       </h2>
-       <p className="text-gray-600 mt-2">Your collection of dreams and stories</p>
-     </div>
+  const renderJournal = () => (
+    <div className="container-wide mx-auto content-container py-8 space-y-6">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-800 flex items-center justify-center space-x-2">
+          <Book className="w-8 h-8 text-purple-600" />
+          <span>Dream Journal</span>
+        </h2>
+        <p className="text-gray-600 mt-2">Your collection of dreams and stories</p>
+      </div>
 
-     {dreams.length === 0 ? (
-       <div className="text-center py-16">
-         <Moon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-         <p className="text-gray-500 text-lg">No dreams recorded yet</p>
-         <p className="text-gray-400">Start by creating your first dream story</p>
-       </div>
-     ) : (
-       <div className="space-y-4">
-         {dreams.map((dream) => (
-           <div key={dream.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
-             {/* Dream List Item */}
-             <div 
-               className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-               onClick={() => setSelectedDream(dream)}
-             >
-               <div className="flex justify-between items-start">
-                 <div className="flex-1">
-                   <h3 className="text-xl font-semibold text-gray-800 mb-2">{dream.title}</h3>
-                   <div className="flex items-center space-x-4 text-sm text-gray-500">
-                     <span>{dream.date}</span>
-                     <span>•</span>
-                     <span className="flex items-center space-x-1">
-                       {dream.inputMode === 'voice' ? (
-                         <>
-                           <Mic className="w-3 h-3" />
-                           <span>Voice</span>
-                         </>
-                       ) : (
-                         <span>Text</span>
-                       )}
-                     </span>
-                     {dream.story && (
-                       <>
-                         <span>•</span>
-                         <span className="flex items-center space-x-1">
-                           <Wand2 className="w-3 h-3" />
-                           <span>Story</span>
-                         </span>
-                       </>
-                     )}
-                     {dream.analysis && (
-                       <>
-                         <span>•</span>
-                         <span className="flex items-center space-x-1">
-                           <Brain className="w-3 h-3" />
-                           <span>Analysis</span>
-                         </span>
-                       </>
-                     )}
-                   </div>
-                 </div>
-                 <div className="text-purple-600 hover:text-purple-800 transition-colors">
-                   <Sparkles className="w-5 h-5" />
-                 </div>
-               </div>
-             </div>
-           </div>
-         ))}
-       </div>
-     )}
+      {dreams.length === 0 ? (
+        <div className="text-center py-16">
+          <DreamLogLogo size="large" />
+          <p className="text-gray-500 text-lg mt-4">No dreams recorded yet</p>
+          <p className="text-gray-400">Start by creating your first dream story</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {dreams.map((dream) => (
+            <div key={dream.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 dream-card">
+              <div 
+                className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setSelectedDream(dream)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{dream.title}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>{dream.date}</span>
+                      <span>•</span>
+                      <span className="flex items-center space-x-1">
+                        {dream.inputMode === 'voice' ? (
+                          <>
+                            <Mic className="w-3 h-3" />
+                            <span>Voice</span>
+                          </>
+                        ) : (
+                          <span>Text</span>
+                        )}
+                      </span>
+                      {dream.story && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center space-x-1">
+                            <Wand2 className="w-3 h-3" />
+                            <span>Story</span>
+                          </span>
+                        </>
+                      )}
+                      {dream.analysis && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center space-x-1">
+                            <Brain className="w-3 h-3" />
+                            <span>Analysis</span>
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-purple-600 hover:text-purple-800 transition-colors">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-     {/* Dream Detail Modal */}
-     {selectedDream && (
-       <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
-         <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-           {/* Header */}
-           <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
-             <div className="flex justify-between items-start">
-               <div>
-                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedDream.title}</h2>
-                 <div className="flex items-center space-x-4 text-sm text-gray-500">
-                   <span>{selectedDream.date}</span>
-                   <span>•</span>
-                   <span className="flex items-center space-x-1">
-                     {selectedDream.inputMode === 'voice' ? (
-                       <>
-                         <Mic className="w-3 h-3" />
-                         <span>Voice Memo</span>
-                       </>
-                     ) : (
-                       <span>Text</span>
-                     )}
-                   </span>
-                 </div>
-               </div>
-               <div className="flex items-center space-x-2">
-                 {selectedDream.audioBlob && (
-                   <button
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       const audioUrl = URL.createObjectURL(selectedDream.audioBlob!);
-                       const audio = new Audio(audioUrl);
-                       audio.play();
-                     }}
-                     className="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200 flex items-center space-x-1 transition-colors"
-                   >
-                     <Play className="w-3 h-3" />
-                     <span>Play</span>
-                   </button>
-                 )}
-                 {user && !isGuest && selectedDream.userId === user.uid && (
-                   <button
-                     onClick={() => deleteDream(selectedDream.id)}
-                     className="text-red-500 hover:text-red-700 transition-colors"
-                     title="Delete dream"
-                   >
-                     <X className="w-5 h-5" />
-                   </button>
-                 )}
-                 <button
-                   onClick={() => setSelectedDream(null)}
-                   className="text-gray-400 hover:text-gray-600 transition-colors"
-                 >
-                   <X className="w-6 h-6" />
-                 </button>
-               </div>
-             </div>
-           </div>
+      {/* Dream Detail Modal */}
+      {selectedDream && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedDream.title}</h2>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>{selectedDream.date}</span>
+                    <span>•</span>
+                    <span className="flex items-center space-x-1">
+                      {selectedDream.inputMode === 'voice' ? (
+                        <>
+                          <Mic className="w-3 h-3" />
+                          <span>Voice Memo</span>
+                        </>
+                      ) : (
+                        <span>Text</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {selectedDream.audioBlob && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const audioUrl = URL.createObjectURL(selectedDream.audioBlob!);
+                        const audio = new Audio(audioUrl);
+                        audio.play();
+                      }}
+                      className="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200 flex items-center space-x-1 transition-colors"
+                    >
+                      <Play className="w-3 h-3" />
+                      <span>Play</span>
+                    </button>
+                  )}
+                  {user && !isGuest && selectedDream.userId === user.uid && (
+                    <button
+                      onClick={() => deleteDream(selectedDream.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                      title="Delete dream"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedDream(null)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            </div>
 
-           {/* Content */}
-           <div className="p-6 space-y-6">
-             {/* Original Dream */}
-             <div>
-               <h3 className="text-lg font-semibold text-gray-800 mb-3">Original Dream</h3>
-               <div className="bg-gray-50 p-4 rounded-xl">
-                 <p className="text-gray-700 leading-relaxed">{selectedDream.originalDream}</p>
-               </div>
-             </div>
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Original Dream */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Original Dream</h3>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-gray-700 leading-relaxed">{selectedDream.originalDream}</p>
+                </div>
+              </div>
 
-             {/* Action Buttons for Missing Content */}
-             {(!selectedDream.story || !selectedDream.analysis) && (
-               <div className="flex space-x-3">
-                 {!selectedDream.story && (
-                   <button
-                     onClick={() => generateStoryForDream(selectedDream)}
-                     disabled={isGenerating}
-                     className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2.5 px-4 rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
-                   >
-                     {isGenerating ? (
-                       <>
-                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                         <span>Generating...</span>
-                       </>
-                     ) : (
-                       <>
-                         <Wand2 className="w-4 h-4" />
-                         <span>Generate Fairy Tale</span>
-                       </>
-                     )}
-                   </button>
-                 )}
-                 {!selectedDream.analysis && (
-                   <button
-                     onClick={() => analyzeDreamFromJournal(selectedDream)}
-                     disabled={isAnalyzing}
-                     className="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-2.5 px-4 rounded-xl font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
-                   >
-                     {isAnalyzing ? (
-                       <>
-                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                         <span>Analyzing...</span>
-                       </>
-                     ) : (
-                       <>
-                         <Brain className="w-4 h-4" />
-                         <span>Analyze Dream</span>
-                       </>
-                     )}
-                   </button>
-                 )}
-               </div>
-             )}
+              {/* Action Buttons for Missing Content */}
+              {(!selectedDream.story || !selectedDream.analysis) && (
+                <div className="button-group">
+                  {!selectedDream.story && (
+                    <button
+                      onClick={() => generateStoryForDream(selectedDream)}
+                      disabled={isGenerating}
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2.5 px-4 rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          <span>Generate Fairy Tale</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {!selectedDream.analysis && (
+                    <button
+                      onClick={() => analyzeDreamFromJournal(selectedDream)}
+                      disabled={isAnalyzing}
+                      className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-2.5 px-4 rounded-xl font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="w-4 h-4" />
+                          <span>Analyze Dream</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
 
-             {/* Generated Fairy Tale */}
-             {selectedDream.story && (
-               <div>
-                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-                   <Wand2 className="w-5 h-5 text-purple-600" />
-                   <span>Generated Fairy Tale</span>
-                 </h3>
-                 <div className="fairy-tale-content p-6 rounded-xl shadow-sm">
-                   <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.story}</p>
-                 </div>
-               </div>
-             )}
+              {/* Generated Fairy Tale */}
+              {selectedDream.story && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                    <Wand2 className="w-5 h-5 text-purple-600" />
+                    <span>Generated Fairy Tale</span>
+                  </h3>
+                  <div className="fairy-tale-content p-6 rounded-xl shadow-sm">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.story}</p>
+                  </div>
+                </div>
+              )}
 
-             {/* Dream Analysis */}
-             {selectedDream.analysis && (
-               <div>
-                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-                   <Brain className="w-5 h-5 text-indigo-600" />
-                   <span>Dream Analysis</span>
-                 </h3>
-                 <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl shadow-sm border border-indigo-100">
-                   <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.analysis}</p>
-                 </div>
-               </div>
-             )}
+              {/* Dream Analysis */}
+              {selectedDream.analysis && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                    <Brain className="w-5 h-5 text-indigo-600" />
+                    <span>Dream Analysis</span>
+                  </h3>
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl shadow-sm border border-indigo-100">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.analysis}</p>
+                  </div>
+                </div>
+              )}
 
-             {/* Images */}
-             {selectedDream.images && selectedDream.images.length > 0 && (
-               <div>
-                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-                   <Image className="w-5 h-5 text-purple-600" />
-                   <span>Story Illustrations</span>
-                 </h3>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                   {selectedDream.images.map((image, i) => (
-                     <div key={i} className="space-y-2">
-                       <div className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
-                         <img 
-                           src={image.url} 
-                           alt={image.description}
-                           className="w-full h-full object-cover"
-                         />
-                       </div>
-                       <p className="text-sm text-gray-600 text-center font-medium">{image.scene}</p>
-                       <p className="text-xs text-gray-500 text-center">{image.description}</p>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
-           </div>
-         </div>
-       </div>
-     )}
-   </div>
- );
+              {/* Images */}
+              {selectedDream.images && selectedDream.images.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                    <Image className="w-5 h-5 text-purple-600" />
+                    <span>Story Illustrations</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {selectedDream.images.map((image, i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="aspect-square rounded-xl overflow-hidden shadow-md bg-gray-100">
+                          <img 
+                            src={image.url} 
+                            alt={image.description}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <p className="text-sm text-gray-600 text-center font-medium">{image.scene}</p>
+                        <p className="text-xs text-gray-500 text-center">{image.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
- const renderSettings = () => (
-   <div className="max-w-2xl mx-auto p-6 space-y-6">
-     <h2 className="text-3xl font-bold text-gray-800 flex items-center space-x-2">
-       <Settings className="w-8 h-8 text-purple-600" />
-       <span>Settings</span>
-     </h2>
+  const renderSettings = () => (
+    <div className="container-narrow mx-auto content-container py-8 space-y-6">
+      <h2 className="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+        <Settings className="w-8 h-8 text-purple-600" />
+        <span>Settings</span>
+      </h2>
 
-     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
-       {/* Account Section */}
-       <div className="border-b pb-6">
-         <h3 className="text-lg font-semibold text-gray-800 mb-4">Account</h3>
-         {user && !isGuest ? (
-           <div className="space-y-3">
-             <div className="flex items-center justify-between">
-               <div className="flex items-center space-x-3">
-                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                   <User className="w-5 h-5 text-purple-600" />
-                 </div>
-                 <div>
-                   <p className="font-medium text-gray-800">{user.displayName || 'User'}</p>
-                   <p className="text-sm text-gray-500">{user.email}</p>
-                 </div>
-               </div>
-               <button
-                 onClick={logout}
-                 className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center space-x-1"
-               >
-                 <LogOut className="w-4 h-4" />
-                 <span>Sign Out</span>
-               </button>
-             </div>
-             <p className="text-sm text-gray-600">Your dreams are synced across all your devices</p>
-           </div>
-         ) : (
-           <div className="space-y-3">
-             <p className="text-gray-600">
-               {isGuest ? "You're in guest mode. Dreams are saved locally only." : "Sign in to sync your dreams across devices"}
-             </p>
-             <button
-               onClick={() => setShowAuthModal(true)}
-               className="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all flex items-center space-x-2"
-             >
-               <User className="w-4 h-4" />
-               <span>Sign In</span>
-             </button>
-           </div>
-         )}
-       </div>
+      <div className="bg-white rounded-2xl shadow-lg p-8 space-y-8">
+        {/* Account Section */}
+        <div className="border-b pb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Account</h3>
+          {user && !isGuest ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">{user.displayName || 'User'}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={logout}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center space-x-1"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+              <p className="text-sm text-gray-600">Your dreams are synced across all your devices</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                {isGuest ? "You're in guest mode. Dreams are saved locally only." : "Sign in to sync your dreams across devices"}
+              </p>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all flex items-center space-x-2"
+              >
+                <User className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            </div>
+          )}
+        </div>
 
-       <div className="grid grid-cols-2 gap-4">
-         <div>
-           <label className="block text-sm font-medium text-gray-700 mb-2">
-             Default Story Tone
-           </label>
-           <select
-             value={storyTone}
-             onChange={(e) => setStoryTone(e.target.value)}
-             className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-           >
-             {Object.entries(toneOptions).map(([key, label]) => (
-               <option key={key} value={key}>{label}</option>
-             ))}
-           </select>
-         </div>
+        <div className="form-section">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Default Story Tone
+              </label>
+              <select
+                value={storyTone}
+                onChange={(e) => setStoryTone(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              >
+                {Object.entries(toneOptions).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
 
-         <div>
-           <label className="block text-sm font-medium text-gray-700 mb-2">
-             Default Story Length
-           </label>
-           <select
-             value={storyLength}
-             onChange={(e) => setStoryLength(e.target.value)}
-             className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-           >
-             {Object.entries(lengthOptions).map(([key, label]) => (
-               <option key={key} value={key}>{label}</option>
-             ))}
-           </select>
-         </div>
-       </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Default Story Length
+              </label>
+              <select
+                value={storyLength}
+                onChange={(e) => setStoryLength(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              >
+                {Object.entries(lengthOptions).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
-       <div>
-         <label className="block text-sm font-medium text-gray-700 mb-3">
-           Story Length: {lengthOptions[storyLength as keyof typeof lengthOptions]}
-         </label>
-         <div className="relative">
-           <input
-             type="range"
-             min="0"
-             max="2"
-             step="1"
-             value={storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2}
-             onChange={(e) => {
-               const value = parseInt(e.target.value);
-               setStoryLength(value === 0 ? 'short' : value === 1 ? 'medium' : 'long');
-             }}
-             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-             style={{
-               background: `linear-gradient(to right, #9333ea 0%, #9333ea ${((storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2) / 2) * 100}%, #e5e7eb ${((storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2) / 2) * 100}%, #e5e7eb 100%)`
-             }}
-           />
-           <div className="flex justify-between mt-2 text-xs text-gray-500">
-             <span>Short</span>
-             <span>Medium</span>
-             <span>Long</span>
-           </div>
-         </div>
-       </div>
+        <div className="form-section">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Story Length: {lengthOptions[storyLength as keyof typeof lengthOptions]}
+          </label>
+          <div className="relative">
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="1"
+              value={storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                setStoryLength(value === 0 ? 'short' : value === 1 ? 'medium' : 'long');
+              }}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #6b46c1 0%, #6b46c1 ${((storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2) / 2) * 100}%, #e5e7eb ${((storyLength === 'short' ? 0 : storyLength === 'medium' ? 1 : 2) / 2) * 100}%, #e5e7eb 100%)`
+              }}
+            />
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <span>Short</span>
+              <span>Medium</span>
+              <span>Long</span>
+            </div>
+          </div>
+        </div>
 
-       <div className="border-t pt-6">
-         <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Management</h3>
-         <div className="space-y-3">
-           <p className="text-gray-600">Total dreams saved: {dreams.length}</p>
-           {isGuest && (
-             <p className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg">
-               ⚠️ Guest mode: Dreams are only saved on this device
-             </p>
-           )}
-           <button
-             onClick={() => {
-               if (confirm('Are you sure you want to clear all dreams? This cannot be undone.')) {
-                 setDreams([]);
-                 localStorage.removeItem('dreamLogDreams');
-               }
-             }}
-             className="text-red-600 hover:text-red-800 text-sm font-medium"
-           >
-             Clear All Dreams
-           </button>
-         </div>
-       </div>
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Management</h3>
+          <div className="space-y-4">
+            <p className="text-gray-600">Total dreams saved: {dreams.length}</p>
+            {isGuest && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800 flex items-center space-x-2">
+                  <span>⚠️</span>
+                  <span>Guest mode: Dreams are only saved on this device</span>
+                </p>
+              </div>
+            )}
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to clear all dreams? This cannot be undone.')) {
+                  setDreams([]);
+                  localStorage.removeItem('dreamLogDreams');
+                }
+              }}
+              className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+            >
+              Clear All Dreams
+            </button>
+          </div>
+        </div>
 
-       <div className="border-t pt-6">
-         <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
-         <p className="text-gray-600 text-sm">
-           Dream Log transforms your dreams into magical fairy tales and provides insightful analysis using AI. 
-           Record your dreams through text or voice, choose to generate a fairy tale, get dream analysis, 
-           or simply save your dream for later. Sign in with Google to sync your dreams across devices,
-           or continue as a guest to save locally.
-         </p>
-       </div>
-     </div>
-   </div>
- );
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Dream Log transforms your dreams into magical fairy tales and provides insightful analysis using AI. 
+            Record your dreams through text or voice, choose to generate a fairy tale, get dream analysis, 
+            or simply save your dream for later. Sign in with Google to sync your dreams across devices,
+            or continue as a guest to save locally.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
- return (
-   <div className="min-h-screen main-gradient-bg">
-     {/* Header */}
-     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-       <div className="max-w-6xl mx-auto px-6 py-4">
-         <div className="flex items-center justify-between">
-           <div className="flex items-center space-x-3">
-             <div className="header-gradient-bg p-2 rounded-xl shadow-md">
-               <Moon className="w-6 h-6 text-white" />
-             </div>
-             <h1 className="text-xl font-bold text-gray-800">Dream Log</h1>
-           </div>
-           
-           <nav className="flex items-center space-x-2">
-             <button
-               onClick={() => setCurrentView('create')}
-               className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
-                 currentView === 'create' 
-                   ? 'bg-purple-100 text-purple-700 shadow-sm' 
-                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-               }`}
-             >
-               <Sparkles className="w-4 h-4" />
-               <span>Create</span>
-             </button>
-             
-             <button
-               onClick={() => setCurrentView('journal')}
-               className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
-                 currentView === 'journal' 
-                   ? 'bg-purple-100 text-purple-700 shadow-sm' 
-                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-               }`}
-             >
-               <Book className="w-4 h-4" />
-               <span>Journal</span>
-             </button>
-             
-             <button
-               onClick={() => setCurrentView('settings')}
-className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
-                 currentView === 'settings' 
-                   ? 'bg-purple-100 text-purple-700 shadow-sm' 
-                   : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-               }`}
-             >
-               <Settings className="w-4 h-4" />
-               <span>Settings</span>
-             </button>
+  return (
+    <div className="min-h-screen main-gradient-bg">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div className="container-wide mx-auto content-container py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <DreamLogLogo />
+              <h1 className="text-xl font-bold text-gray-800">Dream Log</h1>
+            </div>
+            
+            <nav className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentView('create')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+                  currentView === 'create' 
+                    ? 'bg-purple-100 text-purple-700 shadow-sm' 
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Create</span>
+              </button>
+              
+              <button
+                onClick={() => setCurrentView('journal')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+                  currentView === 'journal' 
+                    ? 'bg-purple-100 text-purple-700 shadow-sm' 
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Book className="w-4 h-4" />
+                <span>Journal</span>
+              </button>
+              
+              <button
+                onClick={() => setCurrentView('settings')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+                  currentView === 'settings' 
+                    ? 'bg-purple-100 text-purple-700 shadow-sm' 
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
 
-             {/* User Avatar / Sign In Button */}
-             <div className="ml-4 pl-4 border-l border-gray-300">
-               {user && !isGuest ? (
-                 <button
-                   onClick={() => setCurrentView('settings')}
-                   className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors"
-                 >
-                   <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                     <User className="w-4 h-4 text-purple-600" />
-                   </div>
-                   <span className="text-sm font-medium hidden sm:inline">
-                     {user.displayName || user.email?.split('@')[0] || 'User'}
-                   </span>
-                 </button>
-               ) : (
-                 <button
-                   onClick={() => setShowAuthModal(true)}
-                   className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all"
-                 >
-                   <User className="w-4 h-4" />
-                   <span className="text-sm font-medium">
-                     {isGuest ? 'Sign In' : 'Get Started'}
-                   </span>
-                 </button>
-               )}
-             </div>
-           </nav>
-         </div>
-       </div>
-     </header>
+              {/* User Avatar / Sign In Button */}
+              <div className="ml-4 pl-4 border-l border-gray-300">
+                {user && !isGuest ? (
+                  <button
+                    onClick={() => setCurrentView('settings')}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <span className="text-sm font-medium hidden sm:inline">
+                      {user.displayName || user.email?.split('@')[0] || 'User'}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowAuthModal(true)}
+                    className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      {isGuest ? 'Sign In' : 'Get Started'}
+                    </span>
+                  </button>
+                )}
+              </div>
+            </nav>
+          </div>
+        </div>
+      </header>
 
-     {/* Main Content */}
-     <main className="py-8">
-       {currentView === 'create' && renderCreate()}
-       {currentView === 'journal' && renderJournal()}
-       {currentView === 'settings' && renderSettings()}
-     </main>
+      {/* Main Content */}
+      <main>
+        {currentView === 'create' && renderCreate()}
+        {currentView === 'journal' && renderJournal()}
+        {currentView === 'settings' && renderSettings()}
+      </main>
 
-     {/* Auth Modal */}
-     <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-   </div>
- );
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+    </div>
+  );
 };
 
 // Main App Component with Auth Provider
 const App = () => {
- const { loading } = useAuth();
+  const { loading } = useAuth();
 
- if (loading) {
-   return (
-     <div className="min-h-screen flex items-center justify-center main-gradient-bg">
-       <div className="text-center">
-         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-         <p className="text-gray-600">Loading Dream Log...</p>
-       </div>
-     </div>
-   );
- }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center main-gradient-bg">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading Dream Log...</p>
+        </div>
+      </div>
+    );
+  }
 
- return <DreamLogApp />;
+  return <DreamLogApp />;
 };
 
 // Root Component
 const RootApp = () => (
- <AuthProvider>
-   <App />
- </AuthProvider>
+  <AuthProvider>
+    <App />
+  </AuthProvider>
 );
 
 export default RootApp;

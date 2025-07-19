@@ -25,15 +25,81 @@ body {
 }
 
 .header-gradient-bg {
-  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%);
 }
 
 .button-gradient-bg {
-  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%);
 }
 
 .button-gradient-bg:hover {
   background: linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%);
+}
+
+/* Logo styles */
+.logo-container {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.logo-container.large {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+}
+
+.logo-icon {
+  width: 20px;
+  height: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='white'%3E%3Crect x='10' y='15' width='80' height='70' rx='8' ry='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M25 35 L35 45 L25 55 M45 55 L75 55' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='25' r='2' fill='white'/%3E%3Ccircle cx='40' cy='25' r='2' fill='white'/%3E%3Ccircle cx='50' cy='25' r='2' fill='white'/%3E%3Cpath d='M20 8 Q30 3 40 8 Q50 3 60 8 Q70 3 80 8' stroke='white' stroke-width='2' fill='none'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.logo-icon.large {
+  width: 36px;
+  height: 36px;
+}
+
+/* Container max-width improvements */
+.container-narrow {
+  max-width: 48rem; /* 768px */
+}
+
+.container-wide {
+  max-width: 72rem; /* 1152px */
+}
+
+/* Button spacing improvements */
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.button-group > * {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Content spacing */
+.content-container {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 /* Custom slider styles */
@@ -42,7 +108,7 @@ body {
   height: 20px;
   width: 20px;
   border-radius: 50%;
-  background: #9333ea;
+  background: #6b46c1;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -51,7 +117,7 @@ body {
   height: 20px;
   width: 20px;
   border-radius: 50%;
-  background: #9333ea;
+  background: #6b46c1;
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -64,7 +130,7 @@ body {
 
 .dream-card:hover {
   background-color: #faf5ff;
-  border-left: 4px solid #d8b4fe;
+  border-left: 4px solid #a78bfa;
   transform: translateY(-1px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
@@ -78,5 +144,67 @@ body {
 /* Fairy tale content styling */
 .fairy-tale-content {
   background: linear-gradient(135deg, #faf5ff 0%, #fdf2f8 50%, #eef2ff 100%);
-  border: 1px solid #d8b4fe;
+  border: 1px solid #a78bfa;
+}
+
+/* Improved spacing for form elements */
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Generation mode buttons */
+.generation-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .button-group > * {
+    flex: none;
+    min-width: unset;
+  }
+  
+  .generation-mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Loading animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Better focus states */
+.focus-ring:focus {
+  outline: 2px solid #6b46c1;
+  outline-offset: 2px;
+}
+
+/* Purple theme colors to match logo */
+:root {
+  --primary-50: #faf5ff;
+  --primary-100: #f3e8ff;
+  --primary-200: #e9d5ff;
+  --primary-300: #d8b4fe;
+  --primary-400: #c084fc;
+  --primary-500: #a855f7;
+  --primary-600: #6b46c1;
+  --primary-700: #7c3aed;
+  --primary-800: #6b21a8;
+  --primary-900: #581c87;
 }
