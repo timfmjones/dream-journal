@@ -38,6 +38,12 @@ const imageLimiter = rateLimit({
   message: 'Image generation rate limit exceeded. Please wait a moment.'
 });
 
+const analysisLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // limit analysis to 5 per minute
+  message: 'Dream analysis rate limit exceeded. Please wait a moment.'
+});
+
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -244,6 +250,56 @@ Guidelines:
   } catch (error) {
     console.error('Story generation error:', error);
     res.status(500).json({ error: 'Failed to generate story' });
+  }
+});
+
+// Dream Analysis endpoint
+app.post('/api/analyze-dream', analysisLimiter, async (req, res) => {
+  try {
+    const { dreamText } = req.body;
+
+    if (!dreamText || dreamText.trim().length === 0) {
+      return res.status(400).json({ error: 'Dream text is required' });
+    }
+
+    if (!API_CONFIG.openai.apiKey) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    const systemPrompt = `You are a compassionate dream analyst with expertise in psychology and symbolism. Analyze the provided dream and offer insights into its potential meanings, symbols, and emotional significance.
+
+Guidelines:
+- Provide a thoughtful, empathetic analysis (200-300 words)
+- Identify key symbols and their possible meanings
+- Discuss potential emotional themes or life situations it might reflect
+- Offer constructive insights without being prescriptive
+- Use accessible language, avoiding excessive jargon
+- Be supportive and encouraging
+- Remember this is for self-reflection, not clinical diagnosis`;
+
+    const response = await makeAPICall(`${API_CONFIG.openai.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Please analyze this dream: "${dreamText}"` }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      })
+    });
+
+    const analysis = response.choices[0].message.content;
+    res.json({ analysis });
+
+  } catch (error) {
+    console.error('Dream analysis error:', error);
+    res.status(500).json({ error: 'Failed to analyze dream' });
   }
 });
 

@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Settings, Book, Sparkles, Image, Save, Mic, Square, Play, Pause, X } from 'lucide-react';
+import { Moon, Settings, Book, Sparkles, Image, Save, Mic, Square, Play, Pause, X, Brain, Wand2 } from 'lucide-react';
 
 interface Dream {
   id: number;
   originalDream: string;
-  story: string;
+  story?: string;
+  analysis?: string;
   title: string;
   tone: string;
   length: string;
   date: string;
-  images: { url: string; scene: string; description: string }[];
+  images?: { url: string; scene: string; description: string }[];
   audioBlob?: Blob;
   inputMode: 'text' | 'voice';
 }
@@ -19,8 +20,10 @@ const DreamLogApp = () => {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [currentDream, setCurrentDream] = useState('');
   const [generatedStory, setGeneratedStory] = useState('');
+  const [generatedAnalysis, setGeneratedAnalysis] = useState('');
   const [generatedTitle, setGeneratedTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [storyTone, setStoryTone] = useState('whimsical');
   const [storyLength, setStoryLength] = useState('medium');
   const [isRecording, setIsRecording] = useState(false);
@@ -30,6 +33,7 @@ const DreamLogApp = () => {
   const [generatedImages, setGeneratedImages] = useState<any[]>([]);
   const [transcribedText, setTranscribedText] = useState('');
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
+  const [generationMode, setGenerationMode] = useState<'story' | 'analysis' | 'none'>('none');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -63,16 +67,17 @@ const DreamLogApp = () => {
     long: 'Long'
   };
 
-  const generateStory = async () => {
-    if (!currentDream.trim() && !audioBlob) return;
+  const generateStory = async (dreamText?: string) => {
+    const textToUse = dreamText || currentDream;
+    if (!textToUse.trim() && !audioBlob) return;
     
     setIsGenerating(true);
     
     try {
-      let dreamText = currentDream;
+      let finalDreamText = textToUse;
       
       // If audio was recorded, transcribe it first
-      if (audioBlob && inputMode === 'voice') {
+      if (audioBlob && inputMode === 'voice' && !dreamText) {
         const formData = new FormData();
         formData.append('audio', audioBlob, 'dream.wav');
         
@@ -86,24 +91,26 @@ const DreamLogApp = () => {
         }
         
         const transcribeData = await transcribeResponse.json();
-        dreamText = transcribeData.text;
-        setTranscribedText(dreamText);
+        finalDreamText = transcribeData.text;
+        setTranscribedText(finalDreamText);
       }
       
-      // Generate title
-      const titleResponse = await fetch('http://localhost:3001/api/generate-title', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dreamText: dreamText,
-        }),
-      });
-      
-      if (titleResponse.ok) {
-        const titleData = await titleResponse.json();
-        setGeneratedTitle(titleData.title);
+      // Generate title if not already generated
+      if (!generatedTitle && !dreamText) {
+        const titleResponse = await fetch('http://localhost:3001/api/generate-title', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dreamText: finalDreamText,
+          }),
+        });
+        
+        if (titleResponse.ok) {
+          const titleData = await titleResponse.json();
+          setGeneratedTitle(titleData.title);
+        }
       }
       
       // Generate story
@@ -113,7 +120,7 @@ const DreamLogApp = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          dreamText: dreamText,
+          dreamText: finalDreamText,
           tone: storyTone,
           length: storyLength,
         }),
@@ -145,23 +152,100 @@ const DreamLogApp = () => {
       const imageData = await imageResponse.json();
       setGeneratedImages(imageData.images);
       
+      return { story: storyData.story, images: imageData.images };
     } catch (error) {
       console.error('Generation error:', error);
       alert('Failed to generate fairy tale. Please try again.');
+      return null;
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const analyzeDream = async (dreamText?: string) => {
+    const textToUse = dreamText || currentDream;
+    if (!textToUse.trim() && !audioBlob) return;
+    
+    setIsAnalyzing(true);
+    
+    try {
+      let finalDreamText = textToUse;
+      
+      // If audio was recorded, transcribe it first
+      if (audioBlob && inputMode === 'voice' && !dreamText) {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'dream.wav');
+        
+        const transcribeResponse = await fetch('http://localhost:3001/api/transcribe', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!transcribeResponse.ok) {
+          throw new Error('Failed to transcribe audio');
+        }
+        
+        const transcribeData = await transcribeResponse.json();
+        finalDreamText = transcribeData.text;
+        setTranscribedText(finalDreamText);
+      }
+      
+      // Generate title if not already generated
+      if (!generatedTitle && !dreamText) {
+        const titleResponse = await fetch('http://localhost:3001/api/generate-title', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dreamText: finalDreamText,
+          }),
+        });
+        
+        if (titleResponse.ok) {
+          const titleData = await titleResponse.json();
+          setGeneratedTitle(titleData.title);
+        }
+      }
+      
+      // Analyze dream
+      const analysisResponse = await fetch('http://localhost:3001/api/analyze-dream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dreamText: finalDreamText,
+        }),
+      });
+      
+      if (!analysisResponse.ok) {
+        throw new Error('Failed to analyze dream');
+      }
+      
+      const analysisData = await analysisResponse.json();
+      setGeneratedAnalysis(analysisData.analysis);
+      
+      return analysisData.analysis;
+    } catch (error) {
+      console.error('Analysis error:', error);
+      alert('Failed to analyze dream. Please try again.');
+      return null;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const saveDream = () => {
-    if ((!currentDream.trim() && !transcribedText) || !generatedStory) return;
+    if ((!currentDream.trim() && !transcribedText) || (!generatedStory && !generatedAnalysis && generationMode === 'none')) return;
     
     const dreamText = transcribedText || currentDream;
     
     const newDream: Dream = {
       id: Date.now(),
       originalDream: dreamText,
-      story: generatedStory,
+      story: generatedStory || undefined,
+      analysis: generatedAnalysis || undefined,
       title: generatedTitle || 'Untitled Dream',
       tone: storyTone,
       length: storyLength,
@@ -170,7 +254,7 @@ const DreamLogApp = () => {
         day: 'numeric', 
         year: 'numeric' 
       }),
-      images: generatedImages,
+      images: generatedImages.length > 0 ? generatedImages : undefined,
       audioBlob: audioBlob || undefined,
       inputMode: inputMode
     };
@@ -180,12 +264,49 @@ const DreamLogApp = () => {
     // Reset form
     setCurrentDream('');
     setGeneratedStory('');
+    setGeneratedAnalysis('');
     setGeneratedTitle('');
     setGeneratedImages([]);
     setAudioBlob(null);
     setTranscribedText('');
     setInputMode('text');
+    setGenerationMode('none');
     setCurrentView('journal');
+  };
+
+  const generateStoryForDream = async (dream: Dream) => {
+    setIsGenerating(true);
+    try {
+      const result = await generateStory(dream.originalDream);
+      if (result) {
+        const updatedDream = {
+          ...dream,
+          story: result.story,
+          images: result.images
+        };
+        setDreams(dreams.map(d => d.id === dream.id ? updatedDream : d));
+        setSelectedDream(updatedDream);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const analyzeDreamFromJournal = async (dream: Dream) => {
+    setIsAnalyzing(true);
+    try {
+      const analysis = await analyzeDream(dream.originalDream);
+      if (analysis) {
+        const updatedDream = {
+          ...dream,
+          analysis: analysis
+        };
+        setDreams(dreams.map(d => d.id === dream.id ? updatedDream : d));
+        setSelectedDream(updatedDream);
+      }
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const startRecording = async () => {
@@ -383,57 +504,137 @@ const DreamLogApp = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Story Tone
-            </label>
-            <select
-              value={storyTone}
-              onChange={(e) => setStoryTone(e.target.value)}
-              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+        {/* Generation Options */}
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            What would you like to create?
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setGenerationMode('story')}
+              className={`p-3 rounded-xl border-2 transition-all ${
+                generationMode === 'story' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
             >
-              {Object.entries(toneOptions).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Story Length
-            </label>
-            <select
-              value={storyLength}
-              onChange={(e) => setStoryLength(e.target.value)}
-              className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              <Wand2 className="w-5 h-5 mx-auto mb-1" />
+              <span className="text-sm font-medium">Fairy Tale</span>
+            </button>
+            <button
+              onClick={() => setGenerationMode('analysis')}
+              className={`p-3 rounded-xl border-2 transition-all ${
+                generationMode === 'analysis' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
             >
-              {Object.entries(lengthOptions).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
+              <Brain className="w-5 h-5 mx-auto mb-1" />
+              <span className="text-sm font-medium">Analysis</span>
+            </button>
+            <button
+              onClick={() => setGenerationMode('none')}
+              className={`p-3 rounded-xl border-2 transition-all ${
+                generationMode === 'none' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              <Save className="w-5 h-5 mx-auto mb-1" />
+              <span className="text-sm font-medium">Just Save</span>
+            </button>
           </div>
         </div>
 
-        <button
-          onClick={generateStory}
-          disabled={(!currentDream.trim() && !audioBlob) || isGenerating}
-          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
-        >
-          {isGenerating ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span>Creating your fairy tale...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              <span>Generate Fairy Tale</span>
-            </>
+        {generationMode === 'story' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Story Tone
+              </label>
+              <select
+                value={storyTone}
+                onChange={(e) => setStoryTone(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              >
+                {Object.entries(toneOptions).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Story Length
+              </label>
+              <select
+                value={storyLength}
+                onChange={(e) => setStoryLength(e.target.value)}
+                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              >
+                {Object.entries(lengthOptions).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        <div className="flex space-x-3">
+          {generationMode === 'story' && (
+            <button
+              onClick={() => generateStory()}
+              disabled={(!currentDream.trim() && !audioBlob) || isGenerating}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Creating fairy tale...</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5" />
+                  <span>Generate Fairy Tale</span>
+                </>
+              )}
+            </button>
           )}
-        </button>
+
+          {generationMode === 'analysis' && (
+            <button
+              onClick={() => analyzeDream()}
+              disabled={(!currentDream.trim() && !audioBlob) || isAnalyzing}
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Analyzing dream...</span>
+                </>
+              ) : (
+                <>
+                  <Brain className="w-5 h-5" />
+                  <span>Analyze Dream</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {generationMode === 'none' && (
+            <button
+              onClick={saveDream}
+              disabled={!currentDream.trim() && !audioBlob}
+              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+            >
+              <Save className="w-5 h-5" />
+              <span>Save Dream</span>
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Generated Story */}
       {generatedStory && (
         <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 rounded-2xl shadow-xl p-6 space-y-6 border border-purple-100">
           {generatedTitle && (
@@ -493,6 +694,35 @@ const DreamLogApp = () => {
           </button>
         </div>
       )}
+
+      {/* Generated Analysis */}
+      {generatedAnalysis && (
+        <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl p-6 space-y-6 border border-indigo-100">
+          {generatedTitle && (
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">{generatedTitle}</h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full"></div>
+            </div>
+          )}
+          
+          <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
+            <Brain className="w-6 h-6 text-indigo-600" />
+            <span>Dream Analysis</span>
+          </h3>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{generatedAnalysis}</p>
+          </div>
+
+          <button
+            onClick={saveDream}
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
+          >
+            <Save className="w-5 h-5" />
+            <span>Save to Journal</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -503,7 +733,7 @@ const DreamLogApp = () => {
           <Book className="w-8 h-8 text-purple-600" />
           <span>Dream Journal</span>
         </h2>
-        <p className="text-gray-600 mt-2">Your collection of magical dream stories</p>
+        <p className="text-gray-600 mt-2">Your collection of dreams and stories</p>
       </div>
 
       {dreams.length === 0 ? (
@@ -527,20 +757,34 @@ const DreamLogApp = () => {
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <span>{dream.date}</span>
                       <span>•</span>
-                      <span>{toneOptions[dream.tone as keyof typeof toneOptions]}</span>
-                      <span>•</span>
-                      <span>{lengthOptions[dream.length as keyof typeof lengthOptions]}</span>
-                      <span>•</span>
                       <span className="flex items-center space-x-1">
                         {dream.inputMode === 'voice' ? (
                           <>
                             <Mic className="w-3 h-3" />
-                            <span>Voice Memo</span>
+                            <span>Voice</span>
                           </>
                         ) : (
                           <span>Text</span>
                         )}
                       </span>
+                      {dream.story && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center space-x-1">
+                            <Wand2 className="w-3 h-3" />
+                            <span>Story</span>
+                          </span>
+                        </>
+                      )}
+                      {dream.analysis && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center space-x-1">
+                            <Brain className="w-3 h-3" />
+                            <span>Analysis</span>
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="text-purple-600 hover:text-purple-800 transition-colors">
@@ -564,10 +808,6 @@ const DreamLogApp = () => {
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedDream.title}</h2>
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <span>{selectedDream.date}</span>
-                    <span>•</span>
-                    <span>{toneOptions[selectedDream.tone as keyof typeof toneOptions]}</span>
-                    <span>•</span>
-                    <span>{lengthOptions[selectedDream.length as keyof typeof lengthOptions]}</span>
                     <span>•</span>
                     <span className="flex items-center space-x-1">
                       {selectedDream.inputMode === 'voice' ? (
@@ -616,13 +856,75 @@ const DreamLogApp = () => {
                 </div>
               </div>
 
-              {/* Generated Fairy Tale */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Generated Fairy Tale</h3>
-                <div className="fairy-tale-content p-6 rounded-xl shadow-sm">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.story}</p>
+              {/* Action Buttons for Missing Content */}
+              {(!selectedDream.story || !selectedDream.analysis) && (
+                <div className="flex space-x-3">
+                  {!selectedDream.story && (
+                    <button
+                      onClick={() => generateStoryForDream(selectedDream)}
+                      disabled={isGenerating}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2.5 px-4 rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          <span>Generate Fairy Tale</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {!selectedDream.analysis && (
+                    <button
+                      onClick={() => analyzeDreamFromJournal(selectedDream)}
+                      disabled={isAnalyzing}
+                      className="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-2.5 px-4 rounded-xl font-medium hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="w-4 h-4" />
+                          <span>Analyze Dream</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
-              </div>
+              )}
+
+              {/* Generated Fairy Tale */}
+              {selectedDream.story && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                    <Wand2 className="w-5 h-5 text-purple-600" />
+                    <span>Generated Fairy Tale</span>
+                  </h3>
+                  <div className="fairy-tale-content p-6 rounded-xl shadow-sm">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.story}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Dream Analysis */}
+              {selectedDream.analysis && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
+                    <Brain className="w-5 h-5 text-indigo-600" />
+                    <span>Dream Analysis</span>
+                  </h3>
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl shadow-sm border border-indigo-100">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedDream.analysis}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Images */}
               {selectedDream.images && selectedDream.images.length > 0 && (
@@ -744,9 +1046,9 @@ const DreamLogApp = () => {
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
           <p className="text-gray-600 text-sm">
-            Dream Log transforms your dreams into magical fairy tales using AI. 
-            Record your dreams through text or voice, choose a tone and length, and watch 
-            as they're transformed into enchanting stories with beautiful illustrations.
+            Dream Log transforms your dreams into magical fairy tales and provides insightful analysis using AI. 
+            Record your dreams through text or voice, choose to generate a fairy tale, get dream analysis, 
+            or simply save your dream for later. All dreams are stored locally in your browser.
           </p>
         </div>
       </div>
