@@ -1,6 +1,6 @@
 // src/components/common/Modal.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -11,20 +11,44 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, maxWidth = 'max-w-4xl' }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-2xl shadow-2xl ${maxWidth} w-full max-h-[90vh] overflow-y-auto relative`}>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        {children}
+    <>
+      {/* Backdrop with blur */}
+      <div 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" 
+        onClick={onClose}
+      />
+      
+      {/* Modal Container */}
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+          <div className={`relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 ${maxWidth} w-full`}>
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+              aria-label="Close modal"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            {children}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

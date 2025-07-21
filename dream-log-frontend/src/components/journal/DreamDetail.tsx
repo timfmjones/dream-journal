@@ -40,9 +40,9 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
   return (
     <Modal isOpen={!!dream} onClose={onClose} maxWidth="max-w-4xl">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
+      <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
         <div className="flex justify-between items-start">
-          <div>
+          <div className="pr-10">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">{dream.title}</h2>
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <span>{dream.date}</span>
@@ -83,18 +83,18 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-6">
-        {/* Original Dream */}
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Original Dream</h3>
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <p className="text-gray-700 leading-relaxed">{dream.originalDream}</p>
+      <div className="max-h-[calc(90vh-100px)] overflow-y-auto p-6 space-y-6">
+          {/* Original Dream */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Original Dream</h3>
+            <div className="bg-gray-50 p-4 rounded-xl">
+              <p className="text-gray-700 leading-relaxed">{dream.originalDream}</p>
+            </div>
           </div>
-        </div>
 
         {/* Action Buttons */}
         {(!dream.story || !dream.analysis) && (
-          <div className="button-group">
+          <div className="button-group">" on line 104
             {!dream.story && (
               <button
                 onClick={onGenerateStory}
