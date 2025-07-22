@@ -1,6 +1,6 @@
 // src/components/common/TextToSpeech.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Volume2, VolumeX, Pause, Play, Settings } from 'lucide-react';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 
@@ -31,6 +31,10 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [rate, setRate] = useState(1);
   const [pitch, setPitch] = useState(1);
+  
+  // Store the text being spoken to restart if needed
+  const currentTextRef = useRef(text);
+  currentTextRef.current = text;
 
   if (!isSupported) {
     return null;
@@ -38,10 +42,13 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
 
   const handlePlayPause = () => {
     if (!isSpeaking) {
-      speak(text, { rate, pitch });
+      // Start speaking
+      speak(currentTextRef.current, { rate, pitch });
     } else if (isPaused) {
+      // Resume if paused
       resume();
     } else {
+      // Pause if speaking
       pause();
     }
   };
@@ -51,7 +58,47 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
   };
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setVoice(e.target.value);
+    const newVoiceURI = e.target.value;
+    setVoice(newVoiceURI);
+    
+    // If currently speaking, restart with new voice
+    if (isSpeaking) {
+      stop();
+      setTimeout(() => {
+        speak(currentTextRef.current, { rate, pitch });
+      }, 100);
+    }
+  };
+
+  const handleRateChange = (newRate: number) => {
+    setRate(newRate);
+    
+    // If currently speaking, restart with new rate
+    if (isSpeaking) {
+      stop();
+      setTimeout(() => {
+        speak(currentTextRef.current, { rate: newRate, pitch });
+      }, 100);
+    }
+  };
+
+  const handlePitchChange = (newPitch: number) => {
+    setPitch(newPitch);
+    
+    // If currently speaking, restart with new pitch
+    if (isSpeaking) {
+      stop();
+      setTimeout(() => {
+        speak(currentTextRef.current, { rate, pitch: newPitch });
+      }, 100);
+    }
+  };
+
+  // Debug info
+  const getButtonLabel = () => {
+    if (!isSpeaking) return 'Read Aloud';
+    if (isPaused) return 'Resume';
+    return 'Pause';
   };
 
   return (
@@ -60,7 +107,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
         <button
           onClick={handlePlayPause}
           className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
-          title={isSpeaking ? (isPaused ? 'Resume' : 'Pause') : 'Read aloud'}
+          title={getButtonLabel()}
         >
           {!isSpeaking ? (
             <>
@@ -130,12 +177,18 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
               max="2"
               step="0.1"
               value={rate}
-              onChange={(e) => setRate(parseFloat(e.target.value))}
+              onChange={(e) => handleRateChange(parseFloat(e.target.value))}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
               style={{
                 background: `linear-gradient(to right, #6b46c1 0%, #6b46c1 ${((rate - 0.5) / 1.5) * 100}%, #e5e7eb ${((rate - 0.5) / 1.5) * 100}%, #e5e7eb 100%)`
               }}
             />
+            <div className="flex justify-between mt-1 text-xs text-gray-500">
+              <span>0.5x</span>
+              <span>1.0x</span>
+              <span>1.5x</span>
+              <span>2.0x</span>
+            </div>
           </div>
 
           <div>
@@ -148,12 +201,23 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
               max="2"
               step="0.1"
               value={pitch}
-              onChange={(e) => setPitch(parseFloat(e.target.value))}
+              onChange={(e) => handlePitchChange(parseFloat(e.target.value))}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
               style={{
                 background: `linear-gradient(to right, #6b46c1 0%, #6b46c1 ${((pitch - 0.5) / 1.5) * 100}%, #e5e7eb ${((pitch - 0.5) / 1.5) * 100}%, #e5e7eb 100%)`
               }}
             />
+            <div className="flex justify-between mt-1 text-xs text-gray-500">
+              <span>Low</span>
+              <span>Normal</span>
+              <span>High</span>
+            </div>
+          </div>
+
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-xs text-yellow-800">
+              <strong>Note:</strong> Changing voice, speed, or pitch will restart the reading from the beginning.
+            </p>
           </div>
         </div>
       )}

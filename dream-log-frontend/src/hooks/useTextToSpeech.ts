@@ -61,6 +61,7 @@ export const useTextToSpeech = (options: UseTextToSpeechOptions = {}) => {
 
     // Cancel any ongoing speech
     speechSynthRef.current.cancel();
+    setIsPaused(false);
 
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -108,14 +109,16 @@ export const useTextToSpeech = (options: UseTextToSpeechOptions = {}) => {
   };
 
   const pause = () => {
-    if (speechSynthRef.current && isSpeaking) {
+    if (speechSynthRef.current && isSpeaking && !isPaused) {
       speechSynthRef.current.pause();
+      setIsPaused(true);
     }
   };
 
   const resume = () => {
-    if (speechSynthRef.current && isPaused) {
+    if (speechSynthRef.current && isSpeaking && isPaused) {
       speechSynthRef.current.resume();
+      setIsPaused(false);
     }
   };
 
