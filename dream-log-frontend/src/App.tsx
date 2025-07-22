@@ -1,8 +1,8 @@
-// src/App.tsx
+// src/App.tsx - Final version with working AuthModal
 
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import AuthModal from './components/AuthModal';
+import AuthModal from './components/AuthModal'; // Back to the real modal
 import Layout from './components/layout/Layout';
 import CreateView from './components/create/CreateView';
 import JournalView from './components/journal/JournalView';
@@ -15,10 +15,14 @@ const DreamLogApp = () => {
   const [currentView, setCurrentView] = useState<ViewType>('create');
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Debug function
   const handleAuthClick = () => {
     console.log('Auth button clicked, opening modal...');
     setShowAuthModal(true);
+  };
+
+  const handleCloseModal = () => {
+    console.log('Closing auth modal...');
+    setShowAuthModal(false);
   };
 
   if (loading) {
@@ -43,10 +47,7 @@ const DreamLogApp = () => {
 
       <AuthModal 
         isOpen={showAuthModal} 
-        onClose={() => {
-          console.log('Closing auth modal...');
-          setShowAuthModal(false);
-        }} 
+        onClose={handleCloseModal}
       />
     </>
   );

@@ -1,3 +1,5 @@
+// src/contexts/AuthContext.tsx
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   type User,
@@ -32,30 +34,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
+    // Check if user has chosen guest mode before
+    const guestMode = localStorage.getItem('dreamLogGuestMode');
+    if (guestMode === 'true') {
+      setIsGuest(true);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setUser(user);
       if (user) {
+        // User is signed in, clear guest mode
         setIsGuest(false);
+        localStorage.removeItem('dreamLogGuestMode');
       }
       setLoading(false);
     });
-
-    // Check if user has chosen guest mode before
-    const guestMode = localStorage.getItem('dreamLogGuestMode');
-    if (guestMode === 'true' && !user) {
-      setIsGuest(true);
-    }
 
     return unsubscribe;
   }, []);
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      console.log('Attempting Google sign in...');
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Google sign in successful:', result.user.email);
       setIsGuest(false);
       localStorage.removeItem('dreamLogGuestMode');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
+      
+      // Handle specific Firebase Auth errors
+      if (error.code === 'auth/popup-blocked') {
+        error.message = 'Pop-up blocked. Please allow pop-ups for this site.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        error.message = 'Sign in cancelled.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        error.message = 'Sign in window was closed.';
+      }
+      
       throw error;
     }
   };
@@ -72,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const continueAsGuest = () => {
+    console.log('Continuing as guest...');
     setIsGuest(true);
     localStorage.setItem('dreamLogGuestMode', 'true');
   };
