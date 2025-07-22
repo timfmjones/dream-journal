@@ -14,12 +14,22 @@ export interface Dream {
   inputMode: 'text' | 'voice';
   userId?: string;
   userEmail?: string;
+  // New fields from PostgreSQL backend
+  mood?: string;
+  lucidity?: number;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  _count?: {
+    analyses: number;
+  };
 }
 
 export interface DreamImage {
   url: string;
   scene: string;
   description: string;
+  prompt?: string; // New field from backend
 }
 
 export type StoryTone = 'whimsical' | 'mystical' | 'adventurous' | 'gentle' | 'mysterious' | 'comedy';
@@ -35,4 +45,29 @@ export interface ToneOption {
 export interface LengthOption {
   key: StoryLength;
   label: string;
+}
+
+// New types for pagination and filtering
+export interface DreamFilters {
+  search?: string;
+  tags?: string[];
+  mood?: string;
+  startDate?: string;
+  endDate?: string;
+  orderBy?: 'createdAt' | 'date' | 'title';
+  order?: 'asc' | 'desc';
+}
+
+export interface DreamListResponse {
+  dreams: Dream[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface UserStats {
+  totalDreams: number;
+  dreamsThisMonth: number;
+  mostCommonTags: Array<{ tag: string; count: number }>;
+  moodDistribution: Array<{ mood: string; count: number }>;
+  averageLucidity: number | null;
 }

@@ -9,12 +9,25 @@ export const useDreams = () => {
   const { user, isGuest } = useAuth();
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
   const loadDreams = useCallback(async () => {
     setLoading(true);
     try {
       const loadedDreams = await dreamService.loadDreams(user, isGuest);
       setDreams(loadedDreams);
+      
+      // If we get pagination info from the backend, use it
+      if (loadedDreams && typeof loadedDreams === 'object' && 'dreams' in loadedDreams) {
+        setDreams(loadedDreams.dreams);
+        setTotal(loadedDreams.total || loadedDreams.dreams.length);
+        setHasMore(loadedDreams.hasMore || false);
+      } else {
+        setDreams(loadedDreams);
+        setTotal(loadedDreams.length);
+        setHasMore(false);
+      }
     } catch (error) {
       console.error('Failed to load dreams:', error);
     } finally {
@@ -42,6 +55,7 @@ export const useDreams = () => {
     try {
       const savedDream = await dreamService.saveDream(newDream, user, isGuest);
       setDreams(prev => [savedDream, ...prev]);
+      setTotal(prev => prev + 1);
       return savedDream;
     } catch (error) {
       console.error('Failed to save dream:', error);
@@ -64,6 +78,7 @@ export const useDreams = () => {
     try {
       await dreamService.deleteDream(dreamId, user, isGuest);
       setDreams(prev => prev.filter(d => d.id !== dreamId));
+      setTotal(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Failed to delete dream:', error);
       throw error;
@@ -73,6 +88,8 @@ export const useDreams = () => {
   return {
     dreams,
     loading,
+    total,
+    hasMore,
     saveDream,
     updateDream,
     deleteDream,

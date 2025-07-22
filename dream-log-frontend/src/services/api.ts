@@ -2,6 +2,27 @@
 
 import { API_BASE_URL } from '../utils/constants';
 
+// Helper to get auth token
+const getAuthHeaders = async (): Promise<HeadersInit> => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  
+  // Get auth token if available
+  try {
+    const { auth } = await import('../config/firebase');
+    const user = auth.currentUser;
+    if (user) {
+      const token = await user.getIdToken();
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (error) {
+    console.error('Failed to get auth token:', error);
+  }
+  
+  return headers;
+};
+
 export const api = {
   async transcribeAudio(audioBlob: Blob): Promise<{ text: string }> {
     const formData = new FormData();
@@ -67,17 +88,44 @@ export const api = {
     return response.json();
   },
 
-  async analyzeDream(dreamText: string): Promise<{ analysis: string }> {
+  async analyzeDream(dreamText: string, dreamId?: string): Promise<{ 
+    analysis: string;
+    themes?: string[];
+    emotions?: string[];
+    saved?: boolean;
+    analysisId?: string;
+  }> {
+    const headers = await getAuthHeaders();
+    
     const response = await fetch(`${API_BASE_URL}/analyze-dream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ dreamText }),
+      headers,
+      body: JSON.stringify({ dreamText, dreamId }),
     });
     
     if (!response.ok) {
       throw new Error('Failed to analyze dream');
+    }
+    
+    return response.json();
+  },
+
+  async getUserStats(): Promise<{
+    totalDreams: number;
+    dreamsThisMonth: number;
+    mostCommonTags: Array<{ tag: string; count: number }>;
+    moodDistribution: Array<{ mood: string; count: number }>;
+    averageLucidity: number | null;
+  }> {
+    const headers = await getAuthHeaders();
+    
+    const response = await fetch(`${API_BASE_URL}/stats`, {
+      method: 'GET',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get user stats');
     }
     
     return response.json();

@@ -15,6 +15,12 @@ const DreamLogApp = () => {
   const [currentView, setCurrentView] = useState<ViewType>('create');
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Debug function
+  const handleAuthClick = () => {
+    console.log('Auth button clicked, opening modal...');
+    setShowAuthModal(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center main-gradient-bg">
@@ -28,22 +34,30 @@ const DreamLogApp = () => {
       <Layout 
         currentView={currentView} 
         onViewChange={setCurrentView}
-        onAuthClick={() => setShowAuthModal(true)}
+        onAuthClick={handleAuthClick}
       >
         {currentView === 'create' && <CreateView onNavigateToJournal={() => setCurrentView('journal')} />}
         {currentView === 'journal' && <JournalView />}
-        {currentView === 'settings' && <SettingsView onShowAuth={() => setShowAuthModal(true)} />}
+        {currentView === 'settings' && <SettingsView onShowAuth={handleAuthClick} />}
       </Layout>
 
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => {
+          console.log('Closing auth modal...');
+          setShowAuthModal(false);
+        }} 
+      />
     </>
   );
 };
 
-const App = () => (
-  <AuthProvider>
-    <DreamLogApp />
-  </AuthProvider>
-);
+const App = () => {
+  return (
+    <AuthProvider>
+      <DreamLogApp />
+    </AuthProvider>
+  );
+};
 
 export default App;

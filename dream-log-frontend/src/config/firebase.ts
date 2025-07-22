@@ -1,6 +1,24 @@
+// src/config/firebase.ts
+
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+
+// Check if environment variables are loaded
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+if (missingVars.length > 0) {
+  console.error('Missing Firebase configuration variables:', missingVars);
+  console.error('Make sure you have a .env file with all required Firebase configuration');
+}
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,14 +29,38 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Log config status (without sensitive data)
+console.log('Firebase config status:', {
+  hasApiKey: !!firebaseConfig.apiKey,
+  hasAuthDomain: !!firebaseConfig.authDomain,
+  hasProjectId: !!firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain || 'NOT_SET'
+});
 
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+let app;
+let auth;
+let googleProvider;
+let db;
 
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
+try {
+  // Initialize Firebase
+  app = initializeApp(firebaseConfig);
+  
+  // Initialize Firebase Authentication and get a reference to the service
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
+  
+  // Add scopes if needed
+  googleProvider.addScope('profile');
+  googleProvider.addScope('email');
+  
+  // Initialize Cloud Firestore and get a reference to the service
+  db = getFirestore(app);
+  
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+}
 
+export { auth, googleProvider, db };
 export default app;

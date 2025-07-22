@@ -39,7 +39,8 @@ const JournalView: React.FC = () => {
   const analyzeDreamFromJournal = async (dream: Dream) => {
     setIsAnalyzing(true);
     try {
-      const analysisData = await api.analyzeDream(dream.originalDream);
+      // Pass dreamId to save analysis in database
+      const analysisData = await api.analyzeDream(dream.originalDream, dream.id);
       
       const updates = {
         analysis: analysisData.analysis
