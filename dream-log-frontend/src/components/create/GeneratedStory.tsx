@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Sparkles, Image, Save } from 'lucide-react';
+import TextToSpeech from '../common/TextToSpeech';
 import type { DreamImage } from '../../types';
 
 interface GeneratedStoryProps {
@@ -21,10 +22,13 @@ const GeneratedStory: React.FC<GeneratedStoryProps> = ({ title, story, images, o
         </div>
       )}
       
-      <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-        <Sparkles className="w-6 h-6 text-purple-600" />
-        <span>Your Fairy Tale</span>
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
+          <Sparkles className="w-6 h-6 text-purple-600" />
+          <span>Your Fairy Tale</span>
+        </h3>
+        <TextToSpeech text={story} showSettings={true} />
+      </div>
       
       <div className="bg-white p-6 rounded-xl shadow-sm">
         <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{story}</p>

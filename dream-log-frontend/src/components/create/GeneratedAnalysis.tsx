@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Brain, Save } from 'lucide-react';
+import TextToSpeech from '../common/TextToSpeech';
 
 interface GeneratedAnalysisProps {
   title?: string;
@@ -19,10 +20,13 @@ const GeneratedAnalysis: React.FC<GeneratedAnalysisProps> = ({ title, analysis, 
         </div>
       )}
       
-      <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-        <Brain className="w-6 h-6 text-indigo-600" />
-        <span>Dream Analysis</span>
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
+          <Brain className="w-6 h-6 text-indigo-600" />
+          <span>Dream Analysis</span>
+        </h3>
+        <TextToSpeech text={analysis} showSettings={true} />
+      </div>
       
       <div className="bg-white p-6 rounded-xl shadow-sm">
         <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{analysis}</p>

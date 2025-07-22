@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, Play, Mic, Wand2, Brain, Image } from 'lucide-react';
 import Modal from '../common/Modal';
+import TextToSpeech from '../common/TextToSpeech';
 import type { Dream } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -94,7 +95,7 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
 
         {/* Action Buttons */}
         {(!dream.story || !dream.analysis) && (
-          <div className="button-group">" on line 104
+          <div className="button-group">
             {!dream.story && (
               <button
                 onClick={onGenerateStory}
@@ -139,10 +140,13 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
         {/* Generated Fairy Tale */}
         {dream.story && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-              <Wand2 className="w-5 h-5 text-purple-600" />
-              <span>Generated Fairy Tale</span>
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                <Wand2 className="w-5 h-5 text-purple-600" />
+                <span>Generated Fairy Tale</span>
+              </h3>
+              <TextToSpeech text={dream.story} />
+            </div>
             <div className="fairy-tale-content p-6 rounded-xl shadow-sm">
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{dream.story}</p>
             </div>
@@ -152,10 +156,13 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
         {/* Dream Analysis */}
         {dream.analysis && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center space-x-2">
-              <Brain className="w-5 h-5 text-indigo-600" />
-              <span>Dream Analysis</span>
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                <Brain className="w-5 h-5 text-indigo-600" />
+                <span>Dream Analysis</span>
+              </h3>
+              <TextToSpeech text={dream.analysis} />
+            </div>
             <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl shadow-sm border border-indigo-100">
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{dream.analysis}</p>
             </div>

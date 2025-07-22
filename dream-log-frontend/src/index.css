@@ -163,6 +163,19 @@ body {
   gap: 0.75rem;
 }
 
+/* Text-to-speech controls */
+.text-to-speech-controls {
+  display: inline-block;
+}
+
+.text-to-speech-controls button {
+  transition: all 0.2s ease-in-out;
+}
+
+.text-to-speech-controls button:active {
+  transform: scale(0.95);
+}
+
 /* Responsive improvements */
 @media (max-width: 640px) {
   .button-group {
@@ -176,6 +189,16 @@ body {
   
   .generation-mode-grid {
     grid-template-columns: 1fr;
+  }
+  
+  /* Responsive adjustments for text-to-speech */
+  .text-to-speech-controls .flex {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .text-to-speech-controls button span {
+    display: none;
   }
 }
 
