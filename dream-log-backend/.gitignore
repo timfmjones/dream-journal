@@ -44,3 +44,4 @@ jspm_packages/
 
 # Windows
 Thumbs.db
+/generated/prisma

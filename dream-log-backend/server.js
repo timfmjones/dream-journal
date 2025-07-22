@@ -1,4 +1,4 @@
-// server.js - Dream Log Backend
+// server.js - Dream Log Backend with PostgreSQL/Prisma
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -7,9 +7,8 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { verifyToken, requireAuth } = require('./middleware/auth');
-const { db } = require('./config/firebase-admin');
+const db = require('./services/database');
 require('dotenv').config();
-console.log("ENV Loaded?", process.env.FIREBASE_PROJECT_ID); // should NOT be undefined
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -78,6 +77,24 @@ const API_CONFIG = {
   }
 };
 
+// Middleware to attach database user to request
+const attachDbUser = async (req, res, next) => {
+  if (req.user && req.user.uid) {
+    try {
+      const dbUser = await db.findOrCreateUser({
+        uid: req.user.uid,
+        email: req.user.email,
+        displayName: req.user.displayName,
+        photoURL: req.user.photoURL
+      });
+      req.dbUser = dbUser;
+    } catch (error) {
+      console.error('Error attaching DB user:', error);
+    }
+  }
+  next();
+};
+
 // Utility function to make API calls
 async function makeAPICall(url, options) {
   const response = await fetch(url, options);
@@ -112,34 +129,49 @@ function extractStorySegments(story) {
   };
 }
 
-// Dreams endpoints with optional auth
-app.get('/api/dreams', verifyToken, async (req, res) => {
+// Dreams endpoints with PostgreSQL
+app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
   try {
-    if (!req.user) {
+    if (!req.dbUser) {
       // Guest mode - no saved dreams from server
       return res.json({ dreams: [] });
     }
 
-    const dreamsSnapshot = await db.collection('dreams')
-      .where('userId', '==', req.user.uid)
-      .orderBy('createdAt', 'desc')
-      .get();
+    const { 
+      page = 1, 
+      limit = 20, 
+      search, 
+      tags, 
+      startDate, 
+      endDate,
+      mood,
+      orderBy = 'createdAt',
+      order = 'desc'
+    } = req.query;
 
-    const dreams = [];
-    dreamsSnapshot.forEach(doc => {
-      dreams.push({ id: doc.id, ...doc.data() });
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const result = await db.getDreamsByUser(req.dbUser.id, {
+      skip,
+      take: parseInt(limit),
+      orderBy,
+      order,
+      search,
+      tags: tags ? tags.split(',') : undefined,
+      startDate,
+      endDate,
+      mood
     });
 
-    res.json({ dreams });
+    res.json(result);
   } catch (error) {
     console.error('Error fetching dreams:', error);
     res.status(500).json({ error: 'Failed to fetch dreams' });
   }
 });
 
-app.post('/api/dreams', verifyToken, async (req, res) => {
+app.post('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
   try {
-    if (!req.user) {
+    if (!req.dbUser) {
       // Guest mode - don't save to server
       return res.json({ 
         success: true, 
@@ -149,18 +181,26 @@ app.post('/api/dreams', verifyToken, async (req, res) => {
     }
 
     const dreamData = {
-      ...req.body,
-      userId: req.user.uid,
-      userEmail: req.user.email,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      title: req.body.title,
+      dreamText: req.body.dreamText,
+      date: req.body.date ? new Date(req.body.date) : new Date(),
+      story: req.body.story,
+      storyTone: req.body.storyTone,
+      storyLength: req.body.storyLength,
+      hasAudio: req.body.hasAudio || false,
+      audioUrl: req.body.audioUrl,
+      audioDuration: req.body.audioDuration,
+      tags: req.body.tags || [],
+      mood: req.body.mood,
+      lucidity: req.body.lucidity,
+      images: req.body.images || []
     };
 
-    const docRef = await db.collection('dreams').add(dreamData);
+    const dream = await db.createDream(req.dbUser.id, dreamData);
     
     res.json({ 
       success: true, 
-      dream: { id: docRef.id, ...dreamData }
+      dream
     });
   } catch (error) {
     console.error('Error saving dream:', error);
@@ -168,25 +208,30 @@ app.post('/api/dreams', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/api/dreams/:id', requireAuth, async (req, res) => {
+app.put('/api/dreams/:id', requireAuth, attachDbUser, async (req, res) => {
   try {
-    const { id } = req.params;
     const updates = {
-      ...req.body,
-      updatedAt: new Date().toISOString()
+      title: req.body.title,
+      dreamText: req.body.dreamText,
+      story: req.body.story,
+      storyTone: req.body.storyTone,
+      storyLength: req.body.storyLength,
+      tags: req.body.tags,
+      mood: req.body.mood,
+      lucidity: req.body.lucidity,
+      images: req.body.images
     };
 
-    // Verify ownership
-    const dreamDoc = await db.collection('dreams').doc(id).get();
-    if (!dreamDoc.exists || dreamDoc.data().userId !== req.user.uid) {
-      return res.status(404).json({ error: 'Dream not found' });
-    }
+    // Remove undefined values
+    Object.keys(updates).forEach(key => 
+      updates[key] === undefined && delete updates[key]
+    );
 
-    await db.collection('dreams').doc(id).update(updates);
+    const dream = await db.updateDream(req.params.id, req.dbUser.id, updates);
     
     res.json({ 
       success: true, 
-      dream: { id, ...dreamDoc.data(), ...updates }
+      dream
     });
   } catch (error) {
     console.error('Error updating dream:', error);
@@ -194,18 +239,9 @@ app.put('/api/dreams/:id', requireAuth, async (req, res) => {
   }
 });
 
-app.delete('/api/dreams/:id', requireAuth, async (req, res) => {
+app.delete('/api/dreams/:id', requireAuth, attachDbUser, async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Verify ownership
-    const dreamDoc = await db.collection('dreams').doc(id).get();
-    if (!dreamDoc.exists || dreamDoc.data().userId !== req.user.uid) {
-      return res.status(404).json({ error: 'Dream not found' });
-    }
-
-    await db.collection('dreams').doc(id).delete();
-    
+    await db.deleteDream(req.params.id, req.dbUser.id);
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting dream:', error);
@@ -356,10 +392,10 @@ Guidelines:
   }
 });
 
-// Dream Analysis endpoint
-app.post('/api/analyze-dream', analysisLimiter, async (req, res) => {
+// Dream Analysis endpoint with database storage
+app.post('/api/analyze-dream', analysisLimiter, verifyToken, attachDbUser, async (req, res) => {
   try {
-    const { dreamText } = req.body;
+    const { dreamText, dreamId } = req.body;
 
     if (!dreamText || dreamText.trim().length === 0) {
       return res.status(400).json({ error: 'Dream text is required' });
@@ -397,8 +433,37 @@ Guidelines:
       })
     });
 
-    const analysis = response.choices[0].message.content;
-    res.json({ analysis });
+    const analysisText = response.choices[0].message.content;
+    
+    // Save analysis to database if user is authenticated and dreamId provided
+    if (req.dbUser && dreamId) {
+      // Extract themes and emotions from analysis (simple keyword extraction)
+      const emotionKeywords = ['happy', 'sad', 'anxious', 'peaceful', 'excited', 'fearful', 'content', 'frustrated'];
+      const themeKeywords = ['freedom', 'control', 'love', 'loss', 'growth', 'conflict', 'journey', 'transformation'];
+      
+      const lowerText = analysisText.toLowerCase();
+      const emotions = emotionKeywords.filter(emotion => lowerText.includes(emotion));
+      const themes = themeKeywords.filter(theme => lowerText.includes(theme));
+      
+      const savedAnalysis = await db.createDreamAnalysis(dreamId, req.dbUser.id, {
+        analysisText,
+        themes,
+        emotions
+      });
+      
+      res.json({ 
+        analysis: analysisText,
+        themes,
+        emotions,
+        saved: true,
+        analysisId: savedAnalysis.id
+      });
+    } else {
+      res.json({ 
+        analysis: analysisText,
+        saved: false
+      });
+    }
 
   } catch (error) {
     console.error('Dream analysis error:', error);
@@ -424,7 +489,8 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
       mystical: "mystical fairy tale artwork, ethereal lighting, fantasy art style, magical realism, dreamy atmosphere",
       adventurous: "epic fantasy illustration, adventure book art style, dynamic composition, heroic and bold",
       gentle: "soft watercolor fairy tale illustration, pastel colors, gentle and peaceful, children's book style",
-      mysterious: "gothic fairy tale illustration, dramatic shadows, mysterious atmosphere, dark fantasy art"
+      mysterious: "gothic fairy tale illustration, dramatic shadows, mysterious atmosphere, dark fantasy art",
+      comedy: "whimsical spooky comedy illustration, Tim Burton style, quirky characters, humorous dark fantasy"
     };
 
     const baseStyle = stylePrompts[tone] || stylePrompts.whimsical;
@@ -471,7 +537,8 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
         return {
           url: response.data[0].url,
           scene: scene.name,
-          description: scene.description
+          description: scene.description,
+          prompt: scene.prompt
         };
       } catch (error) {
         console.error(`Error generating image for ${scene.name}:`, error);
@@ -493,8 +560,29 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
   }
 });
 
+// User statistics endpoint
+app.get('/api/stats', requireAuth, attachDbUser, async (req, res) => {
+  try {
+    const stats = await db.getUserStats(req.dbUser.id);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'unknown';
+  
+  try {
+    await db.prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'healthy';
+  } catch (error) {
+    dbStatus = 'unhealthy';
+    console.error('Database health check failed:', error);
+  }
+
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
@@ -502,7 +590,8 @@ app.get('/api/health', (req, res) => {
       openai: !!API_CONFIG.openai.apiKey,
       stability: !!API_CONFIG.stability.apiKey,
       firebase: !!process.env.FIREBASE_PROJECT_ID
-    }
+    },
+    database: dbStatus
   });
 });
 
@@ -517,9 +606,17 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  await db.disconnect();
+  process.exit(0);
+});
+
 app.listen(PORT, () => {
   console.log(`Dream Log Backend running on port ${PORT}`);
   console.log(`OpenAI API: ${API_CONFIG.openai.apiKey ? 'Configured' : 'Not configured'}`);
   console.log(`Stability API: ${API_CONFIG.stability.apiKey ? 'Configured' : 'Not configured'}`);
   console.log(`Firebase Admin: ${process.env.FIREBASE_PROJECT_ID ? 'Configured' : 'Not configured'}`);
+  console.log(`Database: ${process.env.DATABASE_URL ? 'Configured' : 'Not configured'}`);
 });
