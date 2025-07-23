@@ -12,33 +12,47 @@ interface GeneratedAnalysisProps {
 
 const GeneratedAnalysis: React.FC<GeneratedAnalysisProps> = ({ title, analysis, onSave }) => {
   return (
-    <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl p-8 space-y-6 border border-indigo-100 fade-in">
+    <div className="generated-content" style={{ 
+      marginTop: '24px',
+      background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)'
+    }}>
       {title && (
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">{title}</h2>
-          <div className="w-16 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full"></div>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#4338ca', marginBottom: '8px' }}>{title}</h2>
+          <div style={{ 
+            width: '60px', 
+            height: '3px', 
+            background: 'linear-gradient(to right, #4f46e5, #818cf8)', 
+            margin: '0 auto',
+            borderRadius: '2px'
+          }} />
         </div>
       )}
       
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-          <Brain className="w-6 h-6 text-indigo-600" />
-          <span>Dream Analysis</span>
+      <div className="generated-header">
+        <h3 className="generated-title" style={{ color: '#4338ca' }}>
+          <Brain style={{ width: '20px', height: '20px' }} />
+          Dream Analysis
         </h3>
         <TextToSpeech text={analysis} showSettings={true} />
       </div>
       
-      <div className="bg-white p-6 rounded-xl shadow-sm">
-        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{analysis}</p>
+      <div className="generated-text">
+        {analysis}
       </div>
 
-      <button
-        onClick={onSave}
-        className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 flex items-center justify-center space-x-2 transition-all shadow-md"
-      >
-        <Save className="w-5 h-5" />
-        <span>Save to Journal</span>
-      </button>
+      <div className="button-group" style={{ marginTop: '32px' }}>
+        <button
+          onClick={onSave}
+          className="primary-button"
+          style={{ background: '#10b981' }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+          onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+        >
+          <Save style={{ width: '16px', height: '16px' }} />
+          Save to Journal
+        </button>
+      </div>
     </div>
   );
 };

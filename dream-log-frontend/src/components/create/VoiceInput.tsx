@@ -27,66 +27,76 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   onClearAudio
 }) => {
   return (
-    <div className="space-y-4">
-      <label className="block text-sm font-medium text-gray-700">
-        Record your dream
-      </label>
+    <div>
+      <label className="form-label">Record your dream</label>
       
-      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center space-y-4 bg-gray-50">
+      <div className="voice-recording-container">
         {!audioBlob ? (
-          <div className="space-y-4">
-            <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center transition-all ${
-              isRecording ? 'bg-red-100 animate-pulse shadow-lg' : 'bg-purple-100'
-            }`}>
-              <Mic className={`w-12 h-12 ${isRecording ? 'text-red-600' : 'text-purple-600'}`} />
+          <div>
+            <div className={`voice-recording-icon ${isRecording ? 'recording' : ''}`}>
+              <Mic style={{ width: '32px', height: '32px', color: isRecording ? '#ef4444' : '#7c3aed' }} />
             </div>
             
             {isRecording ? (
-              <div className="space-y-3">
-                <p className="text-red-600 font-medium animate-pulse">Recording...</p>
+              <div>
+                <p style={{ color: '#ef4444', fontWeight: '600', marginBottom: '16px' }}>Recording...</p>
                 <button
                   onClick={onStopRecording}
-                  className="bg-red-600 text-white px-6 py-2.5 rounded-xl hover:bg-red-700 flex items-center space-x-2 mx-auto transition-all shadow-md"
+                  className="primary-button"
+                  style={{ background: '#ef4444' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
                 >
-                  <Square className="w-4 h-4" />
-                  <span>Stop Recording</span>
+                  <Square style={{ width: '16px', height: '16px' }} />
+                  Stop Recording
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                <p className="text-gray-600">Tap to record your dream</p>
+              <div>
+                <p style={{ color: '#666', marginBottom: '16px' }}>Tap to record your dream</p>
                 <button
                   onClick={onStartRecording}
-                  className="bg-purple-600 text-white px-6 py-2.5 rounded-xl hover:bg-purple-700 flex items-center space-x-2 mx-auto transition-all shadow-md"
+                  className="primary-button"
                 >
-                  <Mic className="w-4 h-4" />
-                  <span>Start Recording</span>
+                  <Mic style={{ width: '16px', height: '16px' }} />
+                  Start Recording
                 </button>
               </div>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="w-24 h-24 rounded-full bg-green-100 mx-auto flex items-center justify-center">
-              <Mic className="w-12 h-12 text-green-600" />
+          <div>
+            <div className="voice-recording-icon" style={{ background: '#dcfce7' }}>
+              <Mic style={{ width: '32px', height: '32px', color: '#16a34a' }} />
             </div>
             
-            <div className="space-y-3">
-              <p className="text-green-600 font-medium">Recording saved!</p>
+            <div>
+              <p style={{ color: '#16a34a', fontWeight: '600', marginBottom: '8px' }}>Recording saved!</p>
               {transcribedText && (
-                <p className="text-sm text-gray-600 italic px-4">"{transcribedText}"</p>
+                <p style={{ 
+                  fontSize: '14px', 
+                  color: '#666', 
+                  fontStyle: 'italic', 
+                  marginBottom: '16px',
+                  padding: '0 20px'
+                }}>
+                  "{transcribedText}"
+                </p>
               )}
-              <div className="button-group justify-center">
+              <div className="button-group">
                 <button
                   onClick={isPlaying ? onStopAudio : onPlayAudio}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 flex items-center space-x-2 transition-all shadow-md"
+                  className="nav-button"
+                  style={{ background: '#3b82f6', color: 'white' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
                 >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  <span>{isPlaying ? 'Pause' : 'Play'}</span>
+                  {isPlaying ? <Pause style={{ width: '16px', height: '16px' }} /> : <Play style={{ width: '16px', height: '16px' }} />}
+                  {isPlaying ? 'Pause' : 'Play'}
                 </button>
                 <button
                   onClick={onClearAudio}
-                  className="bg-gray-600 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition-all shadow-md"
+                  className="nav-button"
                 >
                   Re-record
                 </button>

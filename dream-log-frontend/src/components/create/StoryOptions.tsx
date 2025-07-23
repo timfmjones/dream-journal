@@ -23,16 +23,14 @@ const StoryOptions: React.FC<StoryOptionsProps> = ({
   onGenerateImagesChange 
 }) => {
   return (
-    <div className="form-section space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="form-section">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '16px' }}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Story Tone
-          </label>
+          <label className="form-label">Story Tone</label>
           <select
             value={tone}
             onChange={(e) => onToneChange(e.target.value as StoryTone)}
-            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            className="select-input"
           >
             {TONE_OPTIONS.map(({ key, label }) => (
               <option key={key} value={key}>{label}</option>
@@ -41,13 +39,11 @@ const StoryOptions: React.FC<StoryOptionsProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Story Length
-          </label>
+          <label className="form-label">Story Length</label>
           <select
             value={length}
             onChange={(e) => onLengthChange(e.target.value as StoryLength)}
-            className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            className="select-input"
           >
             {LENGTH_OPTIONS.map(({ key, label }) => (
               <option key={key} value={key}>{label}</option>
@@ -56,50 +52,28 @@ const StoryOptions: React.FC<StoryOptionsProps> = ({
         </div>
       </div>
 
-      {/* Image Generation Toggle */}
-      <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Image className="w-5 h-5 text-purple-600" />
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Generate Illustrations
-              </label>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Create AI-generated images for your fairy tale (3 scenes)
-              </p>
+      <div className="image-toggle-container">
+        <div className="image-toggle-label">
+          <Image style={{ width: '16px', height: '16px' }} />
+          <div>
+            <div style={{ fontWeight: '500' }}>Generate Illustrations</div>
+            <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>
+              Create AI-generated images for your fairy tale (3 scenes)
             </div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={generateImages}
-              onChange={(e) => onGenerateImagesChange(e.target.checked)}
-              className="sr-only"
-            />
-            <div 
-              className="w-11 h-6 rounded-full relative transition-colors duration-200"
-              style={{
-                backgroundColor: generateImages ? '#6b46c1' : '#e5e7eb'
-              }}
-            >
-              <div 
-                className="absolute bg-white rounded-full h-5 w-5 transition-transform duration-200"
-                style={{
-                  top: '2px',
-                  left: generateImages ? '24px' : '2px',
-                  transform: `translateX(0)`
-                }}
-              />
-            </div>
-          </label>
         </div>
-        {!generateImages && (
-          <p className="text-xs text-purple-600 mt-2 italic">
-            Your fairy tale will be created without illustrations to save time
-          </p>
-        )}
+        <div 
+          className={`toggle-switch ${generateImages ? 'active' : ''}`}
+          onClick={() => onGenerateImagesChange(!generateImages)}
+        >
+          <div className="toggle-switch-knob" />
+        </div>
       </div>
+      {!generateImages && (
+        <p style={{ fontSize: '12px', color: '#7c3aed', marginTop: '8px', fontStyle: 'italic' }}>
+          Your fairy tale will be created without illustrations to save time
+        </p>
+      )}
     </div>
   );
 };

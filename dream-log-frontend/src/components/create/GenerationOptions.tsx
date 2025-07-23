@@ -18,22 +18,16 @@ const GenerationOptions: React.FC<GenerationOptionsProps> = ({ generationMode, o
 
   return (
     <div className="form-section">
-      <label className="block text-sm font-medium text-gray-700 mb-4">
-        What would you like to create?
-      </label>
-      <div className="generation-mode-grid">
+      <label className="form-label">What would you like to create?</label>
+      <div className="generation-grid">
         {options.map(({ mode, icon: Icon, label }) => (
           <button
             key={mode}
             onClick={() => onChange(mode)}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              generationMode === mode 
-                ? 'border-purple-500 bg-purple-50 text-purple-700' 
-                : 'border-gray-200 hover:border-purple-300'
-            }`}
+            className={`generation-option ${generationMode === mode ? 'active' : ''}`}
           >
-            <Icon className="w-6 h-6 mx-auto mb-2" />
-            <span className="text-sm font-medium block">{label}</span>
+            <Icon />
+            <span>{label}</span>
           </button>
         ))}
       </div>

@@ -1,8 +1,7 @@
 // src/components/layout/Header.tsx
 
 import React from 'react';
-import { Sparkles, Book, Settings, User } from 'lucide-react';
-import Logo from '../common/Logo';
+import { Home, Book, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import type { ViewType } from '../../types';
 
@@ -16,64 +15,77 @@ const Header: React.FC<HeaderProps> = ({ currentView, onViewChange, onAuthClick 
   const { user, isGuest } = useAuth();
 
   const navItems = [
-    { id: 'create' as ViewType, label: 'Create', icon: Sparkles },
+    { id: 'create' as ViewType, label: 'Home', icon: Home },
     { id: 'journal' as ViewType, label: 'Journal', icon: Book },
     { id: 'settings' as ViewType, label: 'Settings', icon: Settings }
   ];
 
   return (
-    <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-      <div className="w-full px-4">
-        <div className="max-w-6xl mx-auto py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Logo />
-              <h1 className="text-xl font-bold text-gray-800">Dream Log</h1>
+    <header className="header-container">
+      <div className="content-container">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="logo-container">
+              <div className="logo-icon" />
             </div>
-            
-            <nav className="flex items-center space-x-2">
-              {navItems.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => onViewChange(id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
-                    currentView === id 
-                      ? 'bg-purple-100 text-purple-700 shadow-sm' 
-                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{label}</span>
-                </button>
-              ))}
-
-              <div className="ml-4 pl-4 border-l border-gray-300">
-                {user && !isGuest ? (
-                  <button
-                    onClick={() => onViewChange('settings')}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors"
-                  >
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <span className="text-sm font-medium hidden sm:inline">
-                      {user.displayName || user.email?.split('@')[0] || 'User'}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={onAuthClick}
-                    className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all"
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      {isGuest ? 'Sign In' : 'Get Started'}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </nav>
+            <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Dream Log</h1>
           </div>
+          
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {navItems.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => onViewChange(id)}
+                className={`nav-button ${currentView === id ? 'active' : ''}`}
+              >
+                <Icon style={{ width: '16px', height: '16px', display: 'inline-block', marginRight: '6px' }} />
+                {label}
+              </button>
+            ))}
+
+            <div style={{ marginLeft: '16px' }}>
+              {user && !isGuest ? (
+                <button
+                  onClick={() => onViewChange('settings')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#7c3aed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {user.displayName?.[0] || user.email?.[0] || 'U'}
+                  </div>
+                </button>
+              ) : (
+                <button
+                  onClick={onAuthClick}
+                  className="sign-in-button"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+          </nav>
         </div>
       </div>
     </header>

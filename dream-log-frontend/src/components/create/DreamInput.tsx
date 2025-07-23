@@ -37,28 +37,19 @@ const DreamInput: React.FC<DreamInputProps> = ({
 }) => {
   return (
     <div className="form-section">
-      {/* Input Mode Toggle */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+      <div className="toggle-group">
         <button
           onClick={() => {
             onInputModeChange('text');
             onClearAudio();
           }}
-          className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-            inputMode === 'text' 
-              ? 'bg-white text-purple-700 shadow-sm' 
-              : 'text-gray-600 hover:text-purple-600'
-          }`}
+          className={`toggle-button ${inputMode === 'text' ? 'active' : ''}`}
         >
           Type Dream
         </button>
         <button
           onClick={() => onInputModeChange('voice')}
-          className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-            inputMode === 'voice' 
-              ? 'bg-white text-purple-700 shadow-sm' 
-              : 'text-gray-600 hover:text-purple-600'
-          }`}
+          className={`toggle-button ${inputMode === 'voice' ? 'active' : ''}`}
         >
           Voice Memo
         </button>

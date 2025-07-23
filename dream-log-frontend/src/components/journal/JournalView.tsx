@@ -1,7 +1,7 @@
 // src/components/journal/JournalView.tsx
 
 import React, { useState } from 'react';
-import { Book } from 'lucide-react';
+import { Search, Calendar, Filter } from 'lucide-react';
 import DreamCard from './DreamCard';
 import DreamDetail from './DreamDetail';
 import EmptyJournal from './EmptyJournal';
@@ -14,7 +14,9 @@ const JournalView: React.FC = () => {
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [generateImages, setGenerateImages] = useState(true); // New state for image generation preference
+  const [generateImages, setGenerateImages] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest');
 
   const generateStoryForDream = async (dream: Dream) => {
     setIsGenerating(true);
@@ -44,7 +46,6 @@ const JournalView: React.FC = () => {
   const analyzeDreamFromJournal = async (dream: Dream) => {
     setIsAnalyzing(true);
     try {
-      // Pass dreamId to save analysis in database
       const analysisData = await api.analyzeDream(dream.originalDream, dream.id);
       
       const updates = {
@@ -73,21 +74,71 @@ const JournalView: React.FC = () => {
     }
   };
 
+  // Filter and sort dreams
+  const filteredDreams = dreams
+    .filter(dream => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        dream.title.toLowerCase().includes(query) ||
+        dream.originalDream.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return sortBy === 'latest' ? dateB - dateA : dateA - dateB;
+    });
+
   return (
-    <div className="py-8 space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 flex items-center justify-center space-x-2">
-          <Book className="w-8 h-8 text-purple-600" />
-          <span>Dream Journal</span>
-        </h2>
-        <p className="text-gray-600 mt-2">Your collection of dreams and stories</p>
+    <div>
+      <div className="journal-header">
+        <h2>Dream Journal</h2>
+        <p>Your collection of dreams and stories</p>
       </div>
 
-      {dreams.length === 0 ? (
+      {dreams.length > 0 && (
+        <div className="search-container">
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
+            <Search className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search your dreams..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'latest' | 'oldest')}
+              className="select-input"
+              style={{ width: 'auto' }}
+            >
+              <option value="latest">Latest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+            
+            <button className="nav-button" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Filter style={{ width: '16px', height: '16px' }} />
+              Filter
+            </button>
+          </div>
+        </div>
+      )}
+
+      {filteredDreams.length === 0 && dreams.length > 0 ? (
+        <div className="empty-state">
+          <p className="empty-state-text">No dreams match your search</p>
+          <p className="empty-state-subtext">Try a different search term</p>
+        </div>
+      ) : filteredDreams.length === 0 ? (
         <EmptyJournal />
       ) : (
-        <div className="space-y-4">
-          {dreams.map((dream) => (
+        <div>
+          {filteredDreams.map((dream) => (
             <DreamCard
               key={dream.id}
               dream={dream}

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Wand2, Brain, Save } from 'lucide-react';
-import Logo from '../common/Logo';
 import DreamInput from './DreamInput';
 import GenerationOptions from './GenerationOptions';
 import StoryOptions from './StoryOptions';
@@ -30,7 +29,7 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   const [generatedImages, setGeneratedImages] = useState<any[]>([]);
   const [transcribedText, setTranscribedText] = useState('');
   const [generationMode, setGenerationMode] = useState<GenerationMode>('none');
-  const [generateImages, setGenerateImages] = useState(true); // New state for image generation toggle
+  const [generateImages, setGenerateImages] = useState(true);
   
   const { saveDream } = useDreams();
   const {
@@ -53,24 +52,20 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
     try {
       let finalDreamText = textToUse;
       
-      // Transcribe audio if needed
       if (audioBlob && inputMode === 'voice' && !dreamText) {
         const transcribeData = await api.transcribeAudio(audioBlob);
         finalDreamText = transcribeData.text;
         setTranscribedText(finalDreamText);
       }
       
-      // Generate title if needed
       if (!generatedTitle && !dreamText) {
         const titleData = await api.generateTitle(finalDreamText);
         setGeneratedTitle(titleData.title);
       }
       
-      // Generate story
       const storyData = await api.generateStory(finalDreamText, storyTone, storyLength);
       setGeneratedStory(storyData.story);
       
-      // Generate images only if toggle is enabled
       if (generateImages) {
         const imageData = await api.generateImages(storyData.story, storyTone);
         setGeneratedImages(imageData.images);
@@ -97,20 +92,17 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
     try {
       let finalDreamText = textToUse;
       
-      // Transcribe audio if needed
       if (audioBlob && inputMode === 'voice' && !dreamText) {
         const transcribeData = await api.transcribeAudio(audioBlob);
         finalDreamText = transcribeData.text;
         setTranscribedText(finalDreamText);
       }
       
-      // Generate title if needed
       if (!generatedTitle && !dreamText) {
         const titleData = await api.generateTitle(finalDreamText);
         setGeneratedTitle(titleData.title);
       }
       
-      // Analyze dream
       const analysisData = await api.analyzeDream(finalDreamText);
       setGeneratedAnalysis(analysisData.analysis);
       
@@ -153,7 +145,6 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
       setGenerationMode('none');
       clearAudio();
       
-      // Navigate to journal if callback provided
       if (onNavigateToJournal) {
         onNavigateToJournal();
       }
@@ -164,16 +155,18 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   };
 
   return (
-    <div className="py-8 space-y-8">
-      <div className="text-center space-y-4">
-        <div className="flex justify-center">
-          <Logo size="large" />
+    <div>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+          <div className="logo-container large">
+            <div className="logo-icon large" />
+          </div>
         </div>
-        <h1 className="text-4xl font-bold text-gray-800">Dream Log</h1>
-        <p className="text-lg text-gray-600">Transform your dreams into magical fairy tales</p>
+        <h1 style={{ fontSize: '36px', fontWeight: '700', color: '#1a1a1a', marginBottom: '8px' }}>Dream Log</h1>
+        <p style={{ fontSize: '18px', color: '#666' }}>Transform your dreams into magical stories</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
+      <div className="dream-card">
         <DreamInput
           inputMode={inputMode}
           currentDream={currentDream}
@@ -214,16 +207,22 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
             <button
               onClick={() => generateStory()}
               disabled={(!currentDream.trim() && !audioBlob) || isGenerating}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+              className="primary-button"
             >
               {isGenerating ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin" style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid white',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%'
+                  }} />
                   <span>Creating fairy tale...</span>
                 </>
               ) : (
                 <>
-                  <Wand2 className="w-5 h-5" />
+                  <Wand2 style={{ width: '16px', height: '16px' }} />
                   <span>Generate Fairy Tale</span>
                 </>
               )}
@@ -234,16 +233,22 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
             <button
               onClick={() => analyzeDream()}
               disabled={(!currentDream.trim() && !audioBlob) || isAnalyzing}
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+              className="primary-button"
             >
               {isAnalyzing ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin" style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid white',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%'
+                  }} />
                   <span>Analyzing dream...</span>
                 </>
               ) : (
                 <>
-                  <Brain className="w-5 h-5" />
+                  <Brain style={{ width: '16px', height: '16px' }} />
                   <span>Analyze Dream</span>
                 </>
               )}
@@ -254,9 +259,9 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
             <button
               onClick={handleSaveDream}
               disabled={!currentDream.trim() && !audioBlob}
-              className="bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-all shadow-md"
+              className="primary-button"
             >
-              <Save className="w-5 h-5" />
+              <Save style={{ width: '16px', height: '16px' }} />
               <span>Save Dream</span>
             </button>
           )}
