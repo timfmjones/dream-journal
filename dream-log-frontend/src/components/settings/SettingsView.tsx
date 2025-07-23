@@ -47,7 +47,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
   };
 
   return (
-    <div className="container-narrow mx-auto content-container py-8 space-y-6">
+    <div className="py-8 space-y-6">
       <h2 className="text-3xl font-bold text-gray-800 flex items-center space-x-2">
         <Settings className="w-8 h-8 text-purple-600" />
         <span>Settings</span>

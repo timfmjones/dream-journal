@@ -19,7 +19,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange, on
         onViewChange={onViewChange} 
         onAuthClick={onAuthClick} 
       />
-      <main>{children}</main>
+      <main className="w-full">
+        <div className="max-w-6xl mx-auto px-4">
+          {children}
+        </div>
+      </main>
     </div>
   );
 };
