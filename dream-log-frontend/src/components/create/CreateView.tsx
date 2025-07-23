@@ -159,8 +159,8 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   };
 
   return (
-    <div className="container-narrow mx-auto content-container py-8 space-y-8">
-      <div className="text-center space-y-4">
+    <div className="container mx-auto py-8 space-y-8 px-4">
+      <div className="text-center space-y-4 max-w-2xl mx-auto">
         <div className="flex justify-center">
           <Logo size="large" />
         </div>
@@ -168,7 +168,7 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
         <p className="text-lg text-gray-600">Transform your dreams into magical fairy tales</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
+      <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8 max-w-3xl mx-auto">
         <DreamInput
           inputMode={inputMode}
           currentDream={currentDream}
@@ -257,20 +257,24 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
       </div>
 
       {generatedStory && (
-        <GeneratedStory
-          title={generatedTitle}
-          story={generatedStory}
-          images={generatedImages}
-          onSave={handleSaveDream}
-        />
+        <div className="max-w-3xl mx-auto">
+          <GeneratedStory
+            title={generatedTitle}
+            story={generatedStory}
+            images={generatedImages}
+            onSave={handleSaveDream}
+          />
+        </div>
       )}
 
       {generatedAnalysis && (
-        <GeneratedAnalysis
-          title={generatedTitle}
-          analysis={generatedAnalysis}
-          onSave={handleSaveDream}
-        />
+        <div className="max-w-3xl mx-auto">
+          <GeneratedAnalysis
+            title={generatedTitle}
+            analysis={generatedAnalysis}
+            onSave={handleSaveDream}
+          />
+        </div>
       )}
     </div>
   );
