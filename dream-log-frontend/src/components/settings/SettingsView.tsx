@@ -1,7 +1,7 @@
 // src/components/settings/SettingsView.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Settings, TrendingUp, Tag, Brain, Calendar } from 'lucide-react';
+import { Settings, TrendingUp, Tag, Brain, Calendar, Image } from 'lucide-react';
 import AccountSection from './AccountSection';
 import PreferencesSection from './PreferencesSection';
 import DataManagementSection from './DataManagementSection';
@@ -19,12 +19,22 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
   const { user, isGuest } = useAuth();
   const [storyTone, setStoryTone] = useState<StoryTone>('whimsical');
   const [storyLength, setStoryLength] = useState<StoryLength>('medium');
+  const [generateImages, setGenerateImages] = useState(true);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     if (user && !isGuest) {
       loadUserStats();
+    }
+    
+    // Load saved preferences from localStorage
+    const savedPreferences = localStorage.getItem('dreamLogPreferences');
+    if (savedPreferences) {
+      const preferences = JSON.parse(savedPreferences);
+      setStoryTone(preferences.tone || 'whimsical');
+      setStoryLength(preferences.length || 'medium');
+      setGenerateImages(preferences.generateImages !== false);
     }
   }, [user, isGuest]);
 
@@ -46,6 +56,25 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
     window.location.reload(); // Simple reload to reset state
   };
 
+  const handleToneChange = (tone: StoryTone) => {
+    setStoryTone(tone);
+    savePreferences({ tone, length: storyLength, generateImages });
+  };
+
+  const handleLengthChange = (length: StoryLength) => {
+    setStoryLength(length);
+    savePreferences({ tone: storyTone, length, generateImages });
+  };
+
+  const handleGenerateImagesChange = (generate: boolean) => {
+    setGenerateImages(generate);
+    savePreferences({ tone: storyTone, length: storyLength, generateImages: generate });
+  };
+
+  const savePreferences = (preferences: { tone: StoryTone; length: StoryLength; generateImages: boolean }) => {
+    localStorage.setItem('dreamLogPreferences', JSON.stringify(preferences));
+  };
+
   return (
     <div className="py-8 space-y-6">
       <h2 className="text-3xl font-bold text-gray-800 flex items-center space-x-2">
@@ -59,9 +88,56 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
         <PreferencesSection
           storyTone={storyTone}
           storyLength={storyLength}
-          onToneChange={setStoryTone}
-          onLengthChange={setStoryLength}
+          onToneChange={handleToneChange}
+          onLengthChange={handleLengthChange}
         />
+
+        {/* Image Generation Settings */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
+            <Image className="w-5 h-5 text-purple-600" />
+            <span>Image Generation</span>
+          </h3>
+          <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-800">Generate Illustrations by Default</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Automatically create AI-generated images when generating fairy tales
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={generateImages}
+                  onChange={(e) => handleGenerateImagesChange(e.target.checked)}
+                  className="sr-only"
+                />
+                <div 
+                  className="w-11 h-6 rounded-full relative transition-colors duration-200"
+                  style={{
+                    backgroundColor: generateImages ? '#6b46c1' : '#e5e7eb'
+                  }}
+                >
+                  <div 
+                    className="absolute bg-white rounded-full h-5 w-5 transition-transform duration-200"
+                    style={{
+                      top: '2px',
+                      left: generateImages ? '24px' : '2px',
+                      transform: `translateX(0)`
+                    }}
+                  />
+                </div>
+              </label>
+            </div>
+            <p className="text-xs text-purple-600 mt-3 italic">
+              {generateImages 
+                ? "Images will be generated with each fairy tale (may take extra time)"
+                : "Fairy tales will be created without illustrations (faster generation)"
+              }
+            </p>
+          </div>
+        </div>
 
         {/* User Statistics Section */}
         {user && !isGuest && stats && (
@@ -136,12 +212,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">About</h3>
           <p className="text-gray-600 text-sm leading-relaxed">
             Dream Log transforms your dreams into magical fairy tales and provides insightful analysis using AI. 
-            Record your dreams through text or voice, choose to generate a fairy tale, get dream analysis, 
-            or simply save your dream for later. Sign in with Google to sync your dreams across devices,
+            Record your dreams through text or voice, choose to generate a fairy tale with or without illustrations, 
+            get dream analysis, or simply save your dream for later. Sign in with Google to sync your dreams across devices,
             or continue as a guest to save locally.
           </p>
           <p className="text-gray-500 text-xs mt-4">
-            Version 2.0 - Now with enhanced database support and advanced analytics
+            Version 2.1 - Enhanced with customizable image generation options
           </p>
         </div>
       </div>

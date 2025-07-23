@@ -30,6 +30,7 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   const [generatedImages, setGeneratedImages] = useState<any[]>([]);
   const [transcribedText, setTranscribedText] = useState('');
   const [generationMode, setGenerationMode] = useState<GenerationMode>('none');
+  const [generateImages, setGenerateImages] = useState(true); // New state for image generation toggle
   
   const { saveDream } = useDreams();
   const {
@@ -69,11 +70,15 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
       const storyData = await api.generateStory(finalDreamText, storyTone, storyLength);
       setGeneratedStory(storyData.story);
       
-      // Generate images
-      const imageData = await api.generateImages(storyData.story, storyTone);
-      setGeneratedImages(imageData.images);
+      // Generate images only if toggle is enabled
+      if (generateImages) {
+        const imageData = await api.generateImages(storyData.story, storyTone);
+        setGeneratedImages(imageData.images);
+      } else {
+        setGeneratedImages([]);
+      }
       
-      return { story: storyData.story, images: imageData.images };
+      return { story: storyData.story, images: generateImages ? generatedImages : [] };
     } catch (error) {
       console.error('Generation error:', error);
       alert('Failed to generate fairy tale. Please try again.');
@@ -197,8 +202,10 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
           <StoryOptions
             tone={storyTone}
             length={storyLength}
+            generateImages={generateImages}
             onToneChange={setStoryTone}
             onLengthChange={setStoryLength}
+            onGenerateImagesChange={setGenerateImages}
           />
         )}
 

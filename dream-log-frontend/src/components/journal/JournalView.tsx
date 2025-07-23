@@ -14,12 +14,17 @@ const JournalView: React.FC = () => {
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [generateImages, setGenerateImages] = useState(true); // New state for image generation preference
 
   const generateStoryForDream = async (dream: Dream) => {
     setIsGenerating(true);
     try {
       const storyData = await api.generateStory(dream.originalDream, dream.tone, dream.length);
-      const imageData = await api.generateImages(storyData.story, dream.tone);
+      
+      let imageData = { images: [] };
+      if (generateImages) {
+        imageData = await api.generateImages(storyData.story, dream.tone);
+      }
       
       const updates = {
         story: storyData.story,
@@ -96,10 +101,12 @@ const JournalView: React.FC = () => {
         dream={selectedDream}
         isGenerating={isGenerating}
         isAnalyzing={isAnalyzing}
+        generateImages={generateImages}
         onClose={() => setSelectedDream(null)}
         onDelete={handleDeleteDream}
         onGenerateStory={() => selectedDream && generateStoryForDream(selectedDream)}
         onAnalyze={() => selectedDream && analyzeDreamFromJournal(selectedDream)}
+        onGenerateImagesChange={setGenerateImages}
       />
     </div>
   );

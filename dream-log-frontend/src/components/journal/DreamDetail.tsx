@@ -1,7 +1,7 @@
-// src/components/journal/DreamDetail.tsx - Fixed version
+// src/components/journal/DreamDetail.tsx - Updated version with image toggle
 
 import React from 'react';
-import { X, Play, Mic, Wand2, Brain, Image } from 'lucide-react';
+import { X, Play, Mic, Wand2, Brain, Image, Settings } from 'lucide-react';
 import TextToSpeech from '../common/TextToSpeech';
 import type { Dream } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,22 +10,27 @@ interface DreamDetailProps {
   dream: Dream | null;
   isGenerating: boolean;
   isAnalyzing: boolean;
+  generateImages: boolean;
   onClose: () => void;
   onDelete: (dreamId: string) => void;
   onGenerateStory: () => void;
   onAnalyze: () => void;
+  onGenerateImagesChange: (generate: boolean) => void;
 }
 
 const DreamDetail: React.FC<DreamDetailProps> = ({
   dream,
   isGenerating,
   isAnalyzing,
+  generateImages,
   onClose,
   onDelete,
   onGenerateStory,
-  onAnalyze
+  onAnalyze,
+  onGenerateImagesChange
 }) => {
   const { user, isGuest } = useAuth();
+  const [showImageToggle, setShowImageToggle] = React.useState(false);
 
   if (!dream) return null;
 
@@ -228,111 +233,196 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
           {/* Action Buttons */}
           {(!dream.story || !dream.analysis) && (
             <div style={{ 
-              display: 'flex', 
-              gap: '12px', 
-              marginBottom: '24px',
-              flexWrap: 'wrap'
+              marginBottom: '24px'
             }}>
-              {!dream.story && (
-                <button
-                  onClick={onGenerateStory}
-                  disabled={isGenerating}
-                  style={{
-                    background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)',
-                    color: 'white',
-                    padding: '10px 16px',
-                    borderRadius: '12px',
-                    fontWeight: '500',
-                    border: 'none',
-                    cursor: isGenerating ? 'not-allowed' : 'pointer',
-                    display: 'flex',
+              <div style={{ 
+                display: 'flex', 
+                gap: '12px',
+                flexWrap: 'wrap',
+                alignItems: 'center'
+              }}>
+                {!dream.story && (
+                  <>
+                    <button
+                      onClick={onGenerateStory}
+                      disabled={isGenerating}
+                      style={{
+                        background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)',
+                        color: 'white',
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        fontWeight: '500',
+                        border: 'none',
+                        cursor: isGenerating ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s',
+                        opacity: isGenerating ? 0.6 : 1,
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isGenerating) {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isGenerating) {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)';
+                        }
+                      }}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid white',
+                            borderTopColor: 'transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }} />
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 style={{ width: '16px', height: '16px' }} />
+                          <span>Generate Fairy Tale</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Image Toggle Button */}
+                    <button
+                      onClick={() => setShowImageToggle(!showImageToggle)}
+                      style={{
+                        backgroundColor: showImageToggle ? '#E9D5FF' : '#F3F4F6',
+                        color: showImageToggle ? '#6B21A8' : '#374151',
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        fontWeight: '500',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                      title="Story generation settings"
+                    >
+                      <Settings style={{ width: '16px', height: '16px' }} />
+                    </button>
+                  </>
+                )}
+                
+                {!dream.analysis && (
+                  <button
+                    onClick={onAnalyze}
+                    disabled={isAnalyzing}
+                    style={{
+                      background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                      color: 'white',
+                      padding: '10px 16px',
+                      borderRadius: '12px',
+                      fontWeight: '500',
+                      border: 'none',
+                      cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s',
+                      opacity: isAnalyzing ? 0.6 : 1,
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isAnalyzing) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isAnalyzing) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)';
+                      }
+                    }}
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid white',
+                          borderTopColor: 'transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }} />
+                        <span>Analyzing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Brain style={{ width: '16px', height: '16px' }} />
+                        <span>Analyze Dream</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Image Generation Toggle */}
+              {showImageToggle && !dream.story && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: '#F3F1FF',
+                  borderRadius: '12px',
+                  border: '1px solid #E9D5FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Image style={{ width: '16px', height: '16px', color: '#6B21A8' }} />
+                    <span style={{ fontSize: '14px', color: '#374151' }}>
+                      Generate illustrations with story
+                    </span>
+                  </div>
+                  <label style={{ 
+                    position: 'relative',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s',
-                    opacity: isGenerating ? 0.6 : 1,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isGenerating) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isGenerating) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)';
-                    }
-                  }}
-                >
-                  {isGenerating ? (
-                    <>
+                    cursor: 'pointer'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={generateImages}
+                      onChange={(e) => onGenerateImagesChange(e.target.checked)}
+                      style={{ 
+                        position: 'absolute',
+                        opacity: 0,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                    <div style={{
+                      width: '44px',
+                      height: '24px',
+                      backgroundColor: generateImages ? '#6B21A8' : '#E5E7EB',
+                      borderRadius: '12px',
+                      transition: 'background-color 0.2s',
+                      position: 'relative'
+                    }}>
                       <div style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid white',
-                        borderTopColor: 'transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
+                        position: 'absolute',
+                        top: '2px',
+                        left: generateImages ? '22px' : '2px',
+                        width: '20px',
+                        height: '20px',
+                        backgroundColor: 'white',
+                        borderRadius: '10px',
+                        transition: 'left 0.2s',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
                       }} />
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 style={{ width: '16px', height: '16px' }} />
-                      <span>Generate Fairy Tale</span>
-                    </>
-                  )}
-                </button>
-              )}
-              
-              {!dream.analysis && (
-                <button
-                  onClick={onAnalyze}
-                  disabled={isAnalyzing}
-                  style={{
-                    background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
-                    color: 'white',
-                    padding: '10px 16px',
-                    borderRadius: '12px',
-                    fontWeight: '500',
-                    border: 'none',
-                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s',
-                    opacity: isAnalyzing ? 0.6 : 1,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isAnalyzing) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isAnalyzing) {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)';
-                    }
-                  }}
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid white',
-                        borderTopColor: 'transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }} />
-                      <span>Analyzing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Brain style={{ width: '16px', height: '16px' }} />
-                      <span>Analyze Dream</span>
-                    </>
-                  )}
-                </button>
+                    </div>
+                  </label>
+                </div>
               )}
             </div>
           )}

@@ -72,7 +72,12 @@ export const api = {
     return response.json();
   },
 
-  async generateImages(story: string, tone: string): Promise<{ images: any[] }> {
+  async generateImages(story: string, tone: string, skipGeneration?: boolean): Promise<{ images: any[] }> {
+    // If skip generation is true, return empty images array immediately
+    if (skipGeneration) {
+      return { images: [] };
+    }
+
     const response = await fetch(`${API_BASE_URL}/generate-images`, {
       method: 'POST',
       headers: {
