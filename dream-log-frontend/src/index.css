@@ -19,7 +19,7 @@ body {
 
 /* Modern gradient backgrounds */
 .main-gradient-bg {
-  background: linear-gradient(135deg, #f8f9ff 0%, #f3f4ff 50%, #ede9ff 100%);
+  background: linear-gradient(135deg, #663399 0%, #d8a1d0 50%, #ffe0e9 100%);
   position: relative;
 }
 

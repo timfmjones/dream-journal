@@ -134,5 +134,21 @@ export const api = {
     }
     
     return response.json();
-  }
+  },
+
+  async textToSpeech(text: string, voice: string = 'alloy', speed: number = 1.0): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/text-to-speech`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, voice, speed }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to generate speech');
+    }
+    
+    return response.blob();
+  },
 };

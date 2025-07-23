@@ -45,6 +45,12 @@ const analysisLimiter = rateLimit({
   message: 'Dream analysis rate limit exceeded. Please wait a moment.'
 });
 
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // limit TTS requests to 10 per minute
+  message: 'Text-to-speech rate limit exceeded. Please wait a moment.'
+});
+
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -557,6 +563,62 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
   } catch (error) {
     console.error('Image generation error:', error);
     res.status(500).json({ error: 'Failed to generate images' });
+  }
+});
+
+// Text-to-Speech endpoint using OpenAI
+app.post('/api/text-to-speech', ttsLimiter, async (req, res) => {
+  try {
+    const { text, voice = 'alloy', speed = 1.0 } = req.body;
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    if (!API_CONFIG.openai.apiKey) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    // OpenAI TTS voices: alloy, echo, fable, onyx, nova, shimmer
+    const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+    const selectedVoice = validVoices.includes(voice) ? voice : 'alloy';
+
+    const response = await fetch(`${API_CONFIG.openai.baseURL}/audio/speech`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_CONFIG.openai.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        input: text,
+        voice: selectedVoice,
+        speed: Math.max(0.25, Math.min(4.0, speed)) // Clamp speed between 0.25 and 4.0
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI TTS error:', error);
+      throw new Error(`TTS failed: ${response.status}`);
+    }
+
+    // Get the audio data as a buffer
+    const audioBuffer = await response.arrayBuffer();
+    
+    // Set appropriate headers for audio streaming
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': audioBuffer.byteLength,
+      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+    });
+
+    // Send the audio buffer
+    res.send(Buffer.from(audioBuffer));
+
+  } catch (error) {
+    console.error('Text-to-speech error:', error);
+    res.status(500).json({ error: 'Failed to generate speech' });
   }
 });
 

@@ -1,7 +1,7 @@
 // src/components/common/TextToSpeech.tsx
 
-import React, { useState, useRef } from 'react';
-import { Volume2, VolumeX, Pause, Play, Settings } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Volume2, VolumeX, Pause, Play, Settings, Loader2 } from 'lucide-react';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 
 interface TextToSpeechProps {
@@ -17,8 +17,10 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
 }) => {
   const {
     isSupported,
+    isLoading,
     isSpeaking,
     isPaused,
+    error,
     voices,
     selectedVoice,
     speak,
@@ -26,15 +28,22 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
     resume,
     stop,
     setVoice,
+    cleanup
   } = useTextToSpeech();
 
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
-  const [rate, setRate] = useState(1);
-  const [pitch, setPitch] = useState(1);
+  const [speed, setSpeed] = useState(1);
   
   // Store the text being spoken to restart if needed
   const currentTextRef = useRef(text);
   currentTextRef.current = text;
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
 
   if (!isSupported) {
     return null;
@@ -43,7 +52,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
   const handlePlayPause = () => {
     if (!isSpeaking) {
       // Start speaking
-      speak(currentTextRef.current, { rate, pitch });
+      speak(currentTextRef.current, { speed });
     } else if (isPaused) {
       // Resume if paused
       resume();
@@ -58,44 +67,33 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
   };
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newVoiceURI = e.target.value;
-    setVoice(newVoiceURI);
+    const newVoiceId = e.target.value;
+    setVoice(newVoiceId);
     
     // If currently speaking, restart with new voice
     if (isSpeaking) {
       stop();
       setTimeout(() => {
-        speak(currentTextRef.current, { rate, pitch });
+        speak(currentTextRef.current, { voice: newVoiceId, speed });
       }, 100);
     }
   };
 
-  const handleRateChange = (newRate: number) => {
-    setRate(newRate);
+  const handleSpeedChange = (newSpeed: number) => {
+    setSpeed(newSpeed);
     
-    // If currently speaking, restart with new rate
+    // If currently speaking, restart with new speed
     if (isSpeaking) {
       stop();
       setTimeout(() => {
-        speak(currentTextRef.current, { rate: newRate, pitch });
-      }, 100);
-    }
-  };
-
-  const handlePitchChange = (newPitch: number) => {
-    setPitch(newPitch);
-    
-    // If currently speaking, restart with new pitch
-    if (isSpeaking) {
-      stop();
-      setTimeout(() => {
-        speak(currentTextRef.current, { rate, pitch: newPitch });
+        speak(currentTextRef.current, { speed: newSpeed });
       }, 100);
     }
   };
 
   // Debug info
   const getButtonLabel = () => {
+    if (isLoading) return 'Loading...';
     if (!isSpeaking) return 'Read Aloud';
     if (isPaused) return 'Resume';
     return 'Pause';
@@ -106,10 +104,16 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
       <div className="flex items-center space-x-2">
         <button
           onClick={handlePlayPause}
-          className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
+          disabled={isLoading}
+          className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           title={getButtonLabel()}
         >
-          {!isSpeaking ? (
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Loading...</span>
+            </>
+          ) : !isSpeaking ? (
             <>
               <Volume2 className="w-4 h-4" />
               <span className="text-sm">Read Aloud</span>
@@ -148,6 +152,12 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
         )}
       </div>
 
+      {error && (
+        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      )}
+
       {showVoiceSettings && (
         <div className="mt-4 p-4 bg-gray-100 rounded-lg space-y-3">
           <div>
@@ -155,13 +165,13 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
               Voice
             </label>
             <select
-              value={selectedVoice?.voiceURI || ''}
+              value={selectedVoice.id}
               onChange={handleVoiceChange}
               className="w-full p-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
               {voices.map((voice) => (
-                <option key={voice.voiceURI} value={voice.voiceURI}>
-                  {voice.name} ({voice.lang})
+                <option key={voice.id} value={voice.id}>
+                  {voice.name} - {voice.description}
                 </option>
               ))}
             </select>
@@ -169,54 +179,37 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Speed: {rate.toFixed(1)}x
+              Speed: {speed.toFixed(1)}x
             </label>
             <input
               type="range"
-              min="0.5"
-              max="2"
-              step="0.1"
-              value={rate}
-              onChange={(e) => handleRateChange(parseFloat(e.target.value))}
+              min="0.25"
+              max="4"
+              step="0.25"
+              value={speed}
+              onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
               style={{
-                background: `linear-gradient(to right, #6b46c1 0%, #6b46c1 ${((rate - 0.5) / 1.5) * 100}%, #e5e7eb ${((rate - 0.5) / 1.5) * 100}%, #e5e7eb 100%)`
+                background: `linear-gradient(to right, #6b46c1 0%, #6b46c1 ${((speed - 0.25) / 3.75) * 100}%, #e5e7eb ${((speed - 0.25) / 3.75) * 100}%, #e5e7eb 100%)`
               }}
             />
             <div className="flex justify-between mt-1 text-xs text-gray-500">
-              <span>0.5x</span>
+              <span>0.25x</span>
               <span>1.0x</span>
-              <span>1.5x</span>
               <span>2.0x</span>
+              <span>4.0x</span>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Pitch: {pitch.toFixed(1)}
-            </label>
-            <input
-              type="range"
-              min="0.5"
-              max="2"
-              step="0.1"
-              value={pitch}
-              onChange={(e) => handlePitchChange(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-              style={{
-                background: `linear-gradient(to right, #6b46c1 0%, #6b46c1 ${((pitch - 0.5) / 1.5) * 100}%, #e5e7eb ${((pitch - 0.5) / 1.5) * 100}%, #e5e7eb 100%)`
-              }}
-            />
-            <div className="flex justify-between mt-1 text-xs text-gray-500">
-              <span>Low</span>
-              <span>Normal</span>
-              <span>High</span>
-            </div>
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-800">
+              <strong>Tip:</strong> This feature uses OpenAI's advanced text-to-speech technology for natural-sounding voices. Audio is generated on-demand and may take a moment to load for longer texts.
+            </p>
           </div>
 
           <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-xs text-yellow-800">
-              <strong>Note:</strong> Changing voice, speed, or pitch will restart the reading from the beginning.
+              <strong>Note:</strong> Changing voice or speed will restart the reading from the beginning.
             </p>
           </div>
         </div>
