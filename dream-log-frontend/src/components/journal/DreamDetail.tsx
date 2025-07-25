@@ -1,7 +1,7 @@
-// src/components/journal/DreamDetail.tsx - Updated version with image toggle
+// src/components/journal/DreamDetail.tsx - Complete version with favorite button
 
 import React from 'react';
-import { X, Play, Mic, Wand2, Brain, Image, Settings } from 'lucide-react';
+import { X, Play, Mic, Wand2, Brain, Image, Settings, Star, Trash2 } from 'lucide-react';
 import TextToSpeech from '../common/TextToSpeech';
 import type { Dream } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,6 +13,7 @@ interface DreamDetailProps {
   generateImages: boolean;
   onClose: () => void;
   onDelete: (dreamId: string) => void;
+  onToggleFavorite: () => void;
   onGenerateStory: () => void;
   onAnalyze: () => void;
   onGenerateImagesChange: (generate: boolean) => void;
@@ -25,6 +26,7 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
   generateImages,
   onClose,
   onDelete,
+  onToggleFavorite,
   onGenerateStory,
   onAnalyze,
   onGenerateImagesChange
@@ -151,6 +153,40 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
                 </button>
               )}
               
+              {/* Favorite button */}
+              <button
+                onClick={onToggleFavorite}
+                style={{
+                  backgroundColor: dream.isFavorite ? '#FEF3C7' : '#F3F4F6',
+                  color: dream.isFavorite ? '#F59E0B' : '#6B7280',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = dream.isFavorite ? '#FDE68A' : '#E5E7EB';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = dream.isFavorite ? '#FEF3C7' : '#F3F4F6';
+                }}
+                title={dream.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Star 
+                  style={{ 
+                    width: '12px', 
+                    height: '12px',
+                    fill: dream.isFavorite ? '#F59E0B' : 'none'
+                  }} 
+                />
+                <span>{dream.isFavorite ? 'Favorited' : 'Favorite'}</span>
+              </button>
+              
               {user && !isGuest && dream.userId === user.uid && (
                 <button
                   onClick={() => onDelete(dream.id)}
@@ -161,13 +197,17 @@ const DreamDetail: React.FC<DreamDetailProps> = ({
                     cursor: 'pointer',
                     padding: '8px',
                     borderRadius: '6px',
-                    transition: 'color 0.2s'
+                    transition: 'background-color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#DC2626'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#EF4444'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#FEF2F2';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                   title="Delete dream"
                 >
-                  <X style={{ width: '20px', height: '20px' }} />
+                  <Trash2 style={{ width: '20px', height: '20px' }} />
                 </button>
               )}
               

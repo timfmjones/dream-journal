@@ -12,10 +12,10 @@ export const useDreams = () => {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
 
-  const loadDreams = useCallback(async () => {
+  const loadDreams = useCallback(async (favoritesOnly: boolean = false) => {
     setLoading(true);
     try {
-      const loadedDreams = await dreamService.loadDreams(user, isGuest);
+      const loadedDreams = await dreamService.loadDreams(user, isGuest, favoritesOnly);
       setDreams(loadedDreams);
       
       // If we get pagination info from the backend, use it
@@ -49,7 +49,8 @@ export const useDreams = () => {
         year: 'numeric' 
       }),
       userId: user?.uid,
-      userEmail: user?.email || undefined
+      userEmail: user?.email || undefined,
+      isFavorite: false  // Default to not favorite
     };
 
     try {
@@ -74,6 +75,20 @@ export const useDreams = () => {
     }
   };
 
+  const toggleDreamFavorite = async (dreamId: string) => {
+    try {
+      const updatedDream = await dreamService.toggleDreamFavorite(dreamId, user, isGuest);
+      if (updatedDream) {
+        setDreams(prev => prev.map(d => d.id === dreamId ? updatedDream : d));
+        return updatedDream;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      throw error;
+    }
+  };
+
   const deleteDream = async (dreamId: string) => {
     try {
       await dreamService.deleteDream(dreamId, user, isGuest);
@@ -92,6 +107,7 @@ export const useDreams = () => {
     hasMore,
     saveDream,
     updateDream,
+    toggleDreamFavorite,
     deleteDream,
     refreshDreams: loadDreams
   };

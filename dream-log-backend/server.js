@@ -245,6 +245,68 @@ app.put('/api/dreams/:id', requireAuth, attachDbUser, async (req, res) => {
   }
 });
 
+
+// Toggle favorite status endpoint
+app.patch('/api/dreams/:id/favorite', requireAuth, attachDbUser, async (req, res) => {
+  try {
+    const dream = await db.toggleDreamFavorite(req.params.id, req.dbUser.id);
+    
+    res.json({ 
+      success: true, 
+      dream
+    });
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+    if (error.message === 'Dream not found') {
+      res.status(404).json({ error: 'Dream not found' });
+    } else {
+      res.status(500).json({ error: 'Failed to toggle favorite' });
+    }
+  }
+});
+
+// Also update the GET /api/dreams endpoint to support favorites filter
+app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
+  try {
+    if (!req.dbUser) {
+      // Guest mode - no saved dreams from server
+      return res.json({ dreams: [] });
+    }
+
+    const { 
+      page = 1, 
+      limit = 20, 
+      search, 
+      tags, 
+      startDate, 
+      endDate,
+      mood,
+      orderBy = 'createdAt',
+      order = 'desc',
+      favoritesOnly = false  // NEW PARAMETER
+    } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const result = await db.getDreamsByUser(req.dbUser.id, {
+      skip,
+      take: parseInt(limit),
+      orderBy,
+      order,
+      search,
+      tags: tags ? tags.split(',') : undefined,
+      startDate,
+      endDate,
+      mood,
+      favoritesOnly: favoritesOnly === 'true'  // NEW PARAMETER
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching dreams:', error);
+    res.status(500).json({ error: 'Failed to fetch dreams' });
+  }
+});
+
 app.delete('/api/dreams/:id', requireAuth, attachDbUser, async (req, res) => {
   try {
     await db.deleteDream(req.params.id, req.dbUser.id);

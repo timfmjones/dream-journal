@@ -748,3 +748,119 @@ body {
 .form-section:last-child {
   margin-bottom: 0;
 }
+
+/* Favorite star animation */
+@keyframes starPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.favorite-star {
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.favorite-star:hover {
+  transform: scale(1.1);
+}
+
+.favorite-star.active {
+  color: #f59e0b;
+  fill: #f59e0b;
+  animation: starPulse 0.3s ease-in-out;
+}
+
+/* Favorite filter button styles */
+.favorites-filter-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #666;
+}
+
+.favorites-filter-button:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.favorites-filter-button.active {
+  background: #f59e0b;
+  color: white;
+}
+
+.favorites-filter-button.active .star-icon {
+  fill: white;
+}
+
+/* Dream card with favorite indicator */
+.dream-list-card.favorite {
+  border-left: 4px solid #f59e0b;
+  padding-left: 18px;
+}
+
+/* Favorite badge in dream detail */
+.favorite-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Stats grid update for 4 columns on desktop */
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Empty state for favorites */
+.empty-favorites {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-favorites-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  color: #f59e0b;
+  opacity: 0.3;
+}
+
+/* Favorite toggle animation in cards */
+.favorite-toggle {
+  position: relative;
+  overflow: hidden;
+}
+
+.favorite-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.favorite-toggle:active::after {
+  width: 40px;
+  height: 40px;
+}

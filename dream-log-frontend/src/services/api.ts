@@ -115,9 +115,26 @@ export const api = {
     return response.json();
   },
 
+  // NEW METHOD: Toggle favorite status
+  async toggleDreamFavorite(dreamId: string): Promise<{ success: boolean; dream: any }> {
+    const headers = await getAuthHeaders();
+    
+    const response = await fetch(`${API_BASE_URL}/dreams/${dreamId}/favorite`, {
+      method: 'PATCH',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to toggle favorite');
+    }
+    
+    return response.json();
+  },
+
   async getUserStats(): Promise<{
     totalDreams: number;
     dreamsThisMonth: number;
+    favoriteDreams: number;
     mostCommonTags: Array<{ tag: string; count: number }>;
     moodDistribution: Array<{ mood: string; count: number }>;
     averageLucidity: number | null;

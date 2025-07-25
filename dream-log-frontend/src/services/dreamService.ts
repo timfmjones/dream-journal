@@ -3,6 +3,7 @@
 import { type User } from 'firebase/auth';
 import type { Dream } from '../types';
 import { API_BASE_URL } from '../utils/constants';
+import { api } from './api';
 
 const getAuthToken = async (user: User | null) => {
   if (user) {
@@ -12,11 +13,17 @@ const getAuthToken = async (user: User | null) => {
 };
 
 export const dreamService = {
-  async loadDreams(user: User | null, isGuest: boolean): Promise<Dream[]> {
+  async loadDreams(user: User | null, isGuest: boolean, favoritesOnly: boolean = false): Promise<Dream[]> {
     if (user && !isGuest) {
       try {
         const token = await getAuthToken(user);
-        const response = await fetch(`${API_BASE_URL}/dreams?page=1&limit=50`, {
+        const queryParams = new URLSearchParams({
+          page: '1',
+          limit: '50',
+          ...(favoritesOnly && { favoritesOnly: 'true' })
+        });
+        
+        const response = await fetch(`${API_BASE_URL}/dreams?${queryParams}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -42,6 +49,9 @@ export const dreamService = {
     
     // Fall back to localStorage for guest mode
     const savedDreams = JSON.parse(localStorage.getItem('dreamLogDreams') || '[]');
+    if (favoritesOnly) {
+      return savedDreams.filter((dream: Dream) => dream.isFavorite === true);
+    }
     return savedDreams;
   },
 
@@ -61,7 +71,8 @@ export const dreamService = {
           tags: [], // You can add tag support later
           mood: undefined, // You can add mood support later
           lucidity: undefined, // You can add lucidity support later
-          images: dream.images
+          images: dream.images,
+          isFavorite: dream.isFavorite || false
         };
         
         const response = await fetch(`${API_BASE_URL}/dreams`, {
@@ -78,7 +89,8 @@ export const dreamService = {
           return {
             ...dream,
             id: data.dream.id,
-            userId: data.dream.userId
+            userId: data.dream.userId,
+            isFavorite: data.dream.isFavorite
           };
         }
       } catch (error) {
@@ -107,6 +119,7 @@ export const dreamService = {
         if (updates.tone !== undefined) backendUpdates.storyTone = updates.tone;
         if (updates.length !== undefined) backendUpdates.storyLength = updates.length;
         if (updates.images !== undefined) backendUpdates.images = updates.images;
+        if (updates.isFavorite !== undefined) backendUpdates.isFavorite = updates.isFavorite;
         
         const response = await fetch(`${API_BASE_URL}/dreams/${dreamId}`, {
           method: 'PUT',
@@ -125,7 +138,8 @@ export const dreamService = {
             id: data.dream.id,
             originalDream: data.dream.dreamText || updates.originalDream,
             tone: data.dream.storyTone || updates.tone,
-            length: data.dream.storyLength || updates.length
+            length: data.dream.storyLength || updates.length,
+            isFavorite: data.dream.isFavorite
           } as Dream;
         }
       } catch (error) {
@@ -142,6 +156,39 @@ export const dreamService = {
     
     const updatedDream = updatedDreams.find((d: Dream) => d.id === dreamId);
     return updatedDream;
+  },
+
+  // NEW METHOD: Toggle favorite status
+  async toggleDreamFavorite(dreamId: string, user: User | null, isGuest: boolean): Promise<Dream | null> {
+    if (user && !isGuest) {
+      try {
+        const result = await api.toggleDreamFavorite(dreamId);
+        if (result.success && result.dream) {
+          return {
+            ...result.dream,
+            originalDream: result.dream.dreamText,
+            tone: result.dream.storyTone || 'whimsical',
+            length: result.dream.storyLength || 'medium',
+            inputMode: result.dream.hasAudio ? 'voice' : 'text',
+          } as Dream;
+        }
+      } catch (error) {
+        console.error('Failed to toggle favorite on server:', error);
+        throw error;
+      }
+    } else {
+      // Toggle in localStorage for guest mode
+      const savedDreams = JSON.parse(localStorage.getItem('dreamLogDreams') || '[]');
+      const updatedDreams = savedDreams.map((d: Dream) => {
+        if (d.id === dreamId) {
+          return { ...d, isFavorite: !d.isFavorite };
+        }
+        return d;
+      });
+      localStorage.setItem('dreamLogDreams', JSON.stringify(updatedDreams));
+      
+      return updatedDreams.find((d: Dream) => d.id === dreamId) || null;
+    }
   },
 
   async deleteDream(dreamId: string, user: User | null, isGuest: boolean): Promise<void> {

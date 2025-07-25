@@ -1,7 +1,7 @@
 // src/components/journal/JournalView.tsx
 
 import React, { useState } from 'react';
-import { Search, Calendar, Filter } from 'lucide-react';
+import { Search, Calendar, Filter, Star } from 'lucide-react';
 import DreamCard from './DreamCard';
 import DreamDetail from './DreamDetail';
 import EmptyJournal from './EmptyJournal';
@@ -10,13 +10,14 @@ import { api } from '../../services/api';
 import type { Dream } from '../../types';
 
 const JournalView: React.FC = () => {
-  const { dreams, updateDream, deleteDream } = useDreams();
+  const { dreams, updateDream, deleteDream, toggleDreamFavorite, refreshDreams } = useDreams();
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [generateImages, setGenerateImages] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const generateStoryForDream = async (dream: Dream) => {
     setIsGenerating(true);
@@ -74,6 +75,24 @@ const JournalView: React.FC = () => {
     }
   };
 
+  const handleToggleFavorite = async (dreamId: string) => {
+    try {
+      const updatedDream = await toggleDreamFavorite(dreamId);
+      // Update selected dream if it's the one being toggled
+      if (selectedDream && selectedDream.id === dreamId && updatedDream) {
+        setSelectedDream(updatedDream);
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      alert('Failed to update favorite status. Please try again.');
+    }
+  };
+
+  const handleFavoritesFilterToggle = () => {
+    setShowFavoritesOnly(!showFavoritesOnly);
+    refreshDreams(!showFavoritesOnly);
+  };
+
   // Filter and sort dreams
   const filteredDreams = dreams
     .filter(dream => {
@@ -83,6 +102,12 @@ const JournalView: React.FC = () => {
         dream.title.toLowerCase().includes(query) ||
         dream.originalDream.toLowerCase().includes(query)
       );
+    })
+    .filter(dream => {
+      if (showFavoritesOnly) {
+        return dream.isFavorite === true;
+      }
+      return true;
     })
     .sort((a, b) => {
       const dateA = new Date(a.date).getTime();
@@ -110,7 +135,7 @@ const JournalView: React.FC = () => {
             />
           </div>
           
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'latest' | 'oldest')}
@@ -120,6 +145,29 @@ const JournalView: React.FC = () => {
               <option value="latest">Latest First</option>
               <option value="oldest">Oldest First</option>
             </select>
+            
+            <button 
+              className={`nav-button ${showFavoritesOnly ? 'active' : ''}`} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                ...(showFavoritesOnly && {
+                  background: '#f59e0b',
+                  color: 'white'
+                })
+              }}
+              onClick={handleFavoritesFilterToggle}
+            >
+              <Star 
+                style={{ 
+                  width: '16px', 
+                  height: '16px',
+                  fill: showFavoritesOnly ? 'white' : 'none'
+                }} 
+              />
+              Favorites
+            </button>
             
             <button className="nav-button" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Filter style={{ width: '16px', height: '16px' }} />
@@ -131,8 +179,12 @@ const JournalView: React.FC = () => {
 
       {filteredDreams.length === 0 && dreams.length > 0 ? (
         <div className="empty-state">
-          <p className="empty-state-text">No dreams match your search</p>
-          <p className="empty-state-subtext">Try a different search term</p>
+          <p className="empty-state-text">
+            {showFavoritesOnly ? 'No favorite dreams yet' : 'No dreams match your search'}
+          </p>
+          <p className="empty-state-subtext">
+            {showFavoritesOnly ? 'Star your special dreams to see them here' : 'Try a different search term'}
+          </p>
         </div>
       ) : filteredDreams.length === 0 ? (
         <EmptyJournal />
@@ -143,6 +195,7 @@ const JournalView: React.FC = () => {
               key={dream.id}
               dream={dream}
               onClick={() => setSelectedDream(dream)}
+              onToggleFavorite={(e) => handleToggleFavorite(dream.id)}
             />
           ))}
         </div>
@@ -155,6 +208,7 @@ const JournalView: React.FC = () => {
         generateImages={generateImages}
         onClose={() => setSelectedDream(null)}
         onDelete={handleDeleteDream}
+        onToggleFavorite={() => selectedDream && handleToggleFavorite(selectedDream.id)}
         onGenerateStory={() => selectedDream && generateStoryForDream(selectedDream)}
         onAnalyze={() => selectedDream && analyzeDreamFromJournal(selectedDream)}
         onGenerateImagesChange={setGenerateImages}

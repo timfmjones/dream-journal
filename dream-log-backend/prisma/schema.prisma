@@ -1,4 +1,4 @@
-// prisma/schema.prisma
+// dream-log-backend/prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -47,6 +47,7 @@ model Dream {
   
   // Metadata
   isPrivate     Boolean   @default(true)
+  isFavorite    Boolean   @default(false)  // NEW FIELD
   tags          String[]  @default([])
   mood          String?   // happy, anxious, peaceful, etc.
   lucidity      Int?      // 1-5 scale
@@ -60,7 +61,7 @@ model Dream {
   @@index([userId])
   @@index([date])
   @@index([createdAt])
-  // For PostgreSQL full-text search, we'll use GIN indexes via raw SQL migration
+  @@index([isFavorite])  // NEW INDEX
 }
 
 model DreamImage {

@@ -73,10 +73,12 @@ class DatabaseService {
       startDate,
       endDate,
       mood,
+      favoritesOnly = false,  // NEW PARAMETER
     } = options;
 
     const where = {
       userId,
+      ...(favoritesOnly && { isFavorite: true }),  // NEW FILTER
       ...(search && {
         OR: [
           { dreamText: { contains: search, mode: 'insensitive' } },
@@ -172,6 +174,39 @@ class DatabaseService {
     });
   }
 
+  // NEW METHOD: Toggle favorite status
+  async toggleDreamFavorite(dreamId, userId) {
+    // First get the current favorite status
+    const dream = await this.prisma.dream.findFirst({
+      where: {
+        id: dreamId,
+        userId,
+      },
+      select: {
+        isFavorite: true,
+      },
+    });
+
+    if (!dream) {
+      throw new Error('Dream not found');
+    }
+
+    // Toggle the favorite status
+    return await this.prisma.dream.update({
+      where: {
+        id: dreamId,
+        userId,
+      },
+      data: {
+        isFavorite: !dream.isFavorite,
+      },
+      include: {
+        images: true,
+        analyses: true,
+      },
+    });
+  }
+
   async deleteDream(dreamId, userId) {
     return await this.prisma.dream.delete({
       where: {
@@ -207,6 +242,7 @@ class DatabaseService {
     const [
       totalDreams,
       dreamsThisMonth,
+      favoriteDreams,  // NEW STAT
       mostCommonTags,
       moodDistribution,
       averageLucidity,
@@ -220,6 +256,7 @@ class DatabaseService {
           },
         },
       }),
+      this.prisma.dream.count({ where: { userId, isFavorite: true } }),  // NEW STAT
       this.prisma.$queryRaw`
         SELECT tag, COUNT(*) as count
         FROM (
@@ -245,6 +282,7 @@ class DatabaseService {
     return {
       totalDreams,
       dreamsThisMonth,
+      favoriteDreams,  // NEW STAT
       mostCommonTags,
       moodDistribution: moodDistribution.map(m => ({
         mood: m.mood,

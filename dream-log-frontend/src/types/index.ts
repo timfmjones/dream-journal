@@ -18,6 +18,7 @@ export interface Dream {
   mood?: string;
   lucidity?: number;
   tags?: string[];
+  isFavorite?: boolean;  // NEW FIELD
   createdAt?: string;
   updatedAt?: string;
   _count?: {
@@ -56,6 +57,7 @@ export interface DreamFilters {
   endDate?: string;
   orderBy?: 'createdAt' | 'date' | 'title';
   order?: 'asc' | 'desc';
+  favoritesOnly?: boolean;  // NEW FIELD
 }
 
 export interface DreamListResponse {
@@ -67,6 +69,7 @@ export interface DreamListResponse {
 export interface UserStats {
   totalDreams: number;
   dreamsThisMonth: number;
+  favoriteDreams: number;  // NEW FIELD
   mostCommonTags: Array<{ tag: string; count: number }>;
   moodDistribution: Array<{ mood: string; count: number }>;
   averageLucidity: number | null;
