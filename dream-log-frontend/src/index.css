@@ -25,8 +25,8 @@ body {
 
 /* Header styles */
 .header-container {
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #e6e6fa 0%, #f8f8ff 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -231,7 +231,7 @@ body {
 }
 
 /* Logo styles */
-.logo-container {
+/* .logo-container {
   width: 32px;
   height: 32px;
   background: linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%);
@@ -258,7 +258,7 @@ body {
 .logo-icon.large {
   width: 36px;
   height: 36px;
-}
+} */
 
 /* Journal view styles */
 .journal-header {

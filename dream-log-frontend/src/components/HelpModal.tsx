@@ -57,7 +57,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <div style={{
               width: '40px',
               height: '40px',
-              background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)',
+            //   background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)',
               borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
