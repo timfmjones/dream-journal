@@ -1,5 +1,4 @@
-// src/contexts/AuthContext.tsx
-
+// src/contexts/AuthContext.tsx - Fixed for React 19 compatibility
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   type User,
@@ -40,21 +39,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsGuest(true);
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
-      setUser(user);
-      if (user) {
-        // User is signed in, clear guest mode
-        setIsGuest(false);
-        localStorage.removeItem('dreamLogGuestMode');
-      }
+    // Only set up auth listener if auth is initialized
+    if (!auth) {
+      console.warn('Firebase Auth not initialized');
       setLoading(false);
-    });
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      (user) => {
+        console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+        setUser(user);
+        if (user) {
+          // User is signed in, clear guest mode
+          setIsGuest(false);
+          localStorage.removeItem('dreamLogGuestMode');
+        }
+        setLoading(false);
+      },
+      (error) => {
+        // Handle auth state error
+        console.warn('Auth state error:', error?.message || 'Unknown error');
+        setLoading(false);
+      }
+    );
 
     return unsubscribe;
   }, []);
 
   const signInWithGoogle = async () => {
+    if (!auth || !googleProvider) {
+      throw new Error('Firebase Auth not initialized. Please check your configuration.');
+    }
+
     try {
       console.log('Attempting Google sign in...');
       const result = await signInWithPopup(auth, googleProvider);
@@ -62,29 +80,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsGuest(false);
       localStorage.removeItem('dreamLogGuestMode');
     } catch (error: any) {
-      console.error('Error signing in with Google:', error);
+      console.warn('Error signing in with Google:', error?.message || 'Unknown error');
       
-      // Handle specific Firebase Auth errors
-      if (error.code === 'auth/popup-blocked') {
-        error.message = 'Pop-up blocked. Please allow pop-ups for this site.';
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        error.message = 'Sign in cancelled.';
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        error.message = 'Sign in window was closed.';
-      }
+      // Create a clean error object for React 19
+      const cleanError = new Error(
+        error?.code === 'auth/popup-blocked' ? 'Pop-up blocked. Please allow pop-ups for this site.' :
+        error?.code === 'auth/cancelled-popup-request' ? 'Sign in cancelled.' :
+        error?.code === 'auth/popup-closed-by-user' ? 'Sign in window was closed.' :
+        error?.message || 'Failed to sign in. Please try again.'
+      );
       
-      throw error;
+      throw cleanError;
     }
   };
 
   const logout = async () => {
+    if (!auth) {
+      console.warn('Firebase Auth not initialized');
+      return;
+    }
+
     try {
       await signOut(auth);
       setIsGuest(false);
       localStorage.removeItem('dreamLogGuestMode');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
+    } catch (error: any) {
+      console.warn('Error signing out:', error?.message || 'Unknown error');
+      throw new Error('Failed to sign out. Please try again.');
     }
   };
 

@@ -1,16 +1,18 @@
-// src/components/journal/JournalView.tsx
-
+// src/components/journal/JournalView.tsx - Updated with mobile support
 import React, { useState } from 'react';
 import { Search, Calendar, Filter, Star } from 'lucide-react';
 import DreamCard from './DreamCard';
 import DreamDetail from './DreamDetail';
+import MobileDreamDetail from './MobileDreamDetail';
 import EmptyJournal from './EmptyJournal';
 import { useDreams } from '../../hooks/useDreams';
+import { useMobileDetect } from '../../hooks/useMobileDetect';
 import { api } from '../../services/api';
 import type { Dream } from '../../types';
 
 const JournalView: React.FC = () => {
   const { dreams, updateDream, deleteDream, toggleDreamFavorite, refreshDreams } = useDreams();
+  const { isMobile } = useMobileDetect();
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -78,7 +80,6 @@ const JournalView: React.FC = () => {
   const handleToggleFavorite = async (dreamId: string) => {
     try {
       const updatedDream = await toggleDreamFavorite(dreamId);
-      // Update selected dream if it's the one being toggled
       if (selectedDream && selectedDream.id === dreamId && updatedDream) {
         setSelectedDream(updatedDream);
       }
@@ -115,16 +116,18 @@ const JournalView: React.FC = () => {
       return sortBy === 'latest' ? dateB - dateA : dateA - dateB;
     });
 
+  const DreamDetailComponent = isMobile ? MobileDreamDetail : DreamDetail;
+
   return (
-    <div>
-      <div className="journal-header">
-        <h2>Dream Journal</h2>
-        <p>Your collection of dreams and stories</p>
+    <div className={isMobile ? "pb-safe" : ""}>
+      <div className={isMobile ? "px-4 pt-6 pb-4" : "journal-header"}>
+        <h2 className={isMobile ? "text-2xl font-bold text-gray-900 mb-2" : ""}>Dream Journal</h2>
+        <p className={isMobile ? "text-gray-600 text-sm" : ""}>Your collection of dreams and stories</p>
       </div>
 
       {dreams.length > 0 && (
-        <div className="search-container">
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
+        <div className={isMobile ? "px-4 pb-4" : "search-container"}>
+          <div className="relative mb-4">
             <Search className="search-icon" />
             <input
               type="text"
@@ -132,76 +135,65 @@ const JournalView: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
+              style={isMobile ? { fontSize: '16px' } : {}}
             />
           </div>
           
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div className={`flex gap-2 ${isMobile ? 'overflow-x-auto pb-2 -mx-4 px-4' : 'flex-wrap'}`}>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'latest' | 'oldest')}
-              className="select-input"
-              style={{ width: 'auto' }}
+              className={`select-input ${isMobile ? 'min-w-[120px]' : 'w-auto'}`}
+              style={isMobile ? { fontSize: '16px' } : {}}
             >
               <option value="latest">Latest First</option>
               <option value="oldest">Oldest First</option>
             </select>
             
             <button 
-              className={`nav-button ${showFavoritesOnly ? 'active' : ''}`} 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px',
-                ...(showFavoritesOnly && {
-                  background: '#f59e0b',
-                  color: 'white'
-                })
-              }}
+              className={`nav-button flex items-center gap-1.5 whitespace-nowrap ${showFavoritesOnly ? 'active' : ''}`} 
+              style={showFavoritesOnly ? { background: '#f59e0b', color: 'white' } : {}}
               onClick={handleFavoritesFilterToggle}
             >
-              <Star 
-                style={{ 
-                  width: '16px', 
-                  height: '16px',
-                  fill: showFavoritesOnly ? 'white' : 'none'
-                }} 
-              />
+              <Star className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
               Favorites
             </button>
             
-            <button className="nav-button" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Filter style={{ width: '16px', height: '16px' }} />
+            <button className="nav-button flex items-center gap-1.5 whitespace-nowrap">
+              <Filter className="w-4 h-4" />
               Filter
             </button>
           </div>
         </div>
       )}
 
-      {filteredDreams.length === 0 && dreams.length > 0 ? (
-        <div className="empty-state">
-          <p className="empty-state-text">
-            {showFavoritesOnly ? 'No favorite dreams yet' : 'No dreams match your search'}
-          </p>
-          <p className="empty-state-subtext">
-            {showFavoritesOnly ? 'Star your special dreams to see them here' : 'Try a different search term'}
-          </p>
-        </div>
-      ) : filteredDreams.length === 0 ? (
-        <EmptyJournal />
-      ) : (
-        <div>
-          {filteredDreams.map((dream) => (
-            <DreamCard
-              key={dream.id}
-              dream={dream}
-              onClick={() => setSelectedDream(dream)}
-              onToggleFavorite={(e) => handleToggleFavorite(dream.id)}
-            />
-          ))}
-        </div>
-      )}
+      <div className={isMobile ? "px-4" : ""}>
+        {filteredDreams.length === 0 && dreams.length > 0 ? (
+          <div className="empty-state">
+            <p className="empty-state-text">
+              {showFavoritesOnly ? 'No favorite dreams yet' : 'No dreams match your search'}
+            </p>
+            <p className="empty-state-subtext">
+              {showFavoritesOnly ? 'Star your special dreams to see them here' : 'Try a different search term'}
+            </p>
+          </div>
+        ) : filteredDreams.length === 0 ? (
+          <EmptyJournal />
+        ) : (
+          <div className={isMobile ? "space-y-3" : ""}>
+            {filteredDreams.map((dream) => (
+              <DreamCard
+                key={dream.id}
+                dream={dream}
+                onClick={() => setSelectedDream(dream)}
+                onToggleFavorite={(e) => handleToggleFavorite(dream.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-      <DreamDetail
+      <DreamDetailComponent
         dream={selectedDream}
         isGenerating={isGenerating}
         isAnalyzing={isAnalyzing}
@@ -213,6 +205,12 @@ const JournalView: React.FC = () => {
         onAnalyze={() => selectedDream && analyzeDreamFromJournal(selectedDream)}
         onGenerateImagesChange={setGenerateImages}
       />
+
+      <style jsx>{`
+        .pb-safe {
+          padding-bottom: max(24px, env(safe-area-inset-bottom));
+        }
+      `}</style>
     </div>
   );
 };

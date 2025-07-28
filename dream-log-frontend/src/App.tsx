@@ -1,19 +1,25 @@
-// src/App.tsx - Updated to include floating help button
-
-import React, { useState } from 'react';
+// src/App.tsx - Complete updated version with mobile support
+import React, { useState, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import AuthModal from './components/AuthModal';
-import CreateView from './components/create/CreateView';
-import JournalView from './components/journal/JournalView';
-import SettingsView from './components/settings/SettingsView';
-import Header from './components/layout/Header';
+import { useMobileDetect } from './hooks/useMobileDetect';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import FloatingHelpButton from './components/common/FloatingHelpButton';
-import HelpModal from './components/HelpModal';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import type { ViewType } from './types';
+
+// Lazy load components for better performance
+const CreateView = lazy(() => import('./components/create/CreateView'));
+const MobileCreateView = lazy(() => import('./components/create/MobileCreateView'));
+const JournalView = lazy(() => import('./components/journal/JournalView'));
+const SettingsView = lazy(() => import('./components/settings/SettingsView'));
+const Header = lazy(() => import('./components/layout/Header'));
+const MobileHeader = lazy(() => import('./components/layout/MobileHeader'));
+const AuthModal = lazy(() => import('./components/AuthModal'));
+const HelpModal = lazy(() => import('./components/HelpModal'));
 
 const DreamLogApp = () => {
   const { loading } = useAuth();
+  const { isMobile } = useMobileDetect();
   const [currentView, setCurrentView] = useState<ViewType>('create');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -34,40 +40,57 @@ const DreamLogApp = () => {
     );
   }
 
+  const HeaderComponent = isMobile ? MobileHeader : Header;
+  const CreateComponent = isMobile ? MobileCreateView : CreateView;
+
   return (
     <div className="min-h-screen main-gradient-bg">
-      <Header 
-        currentView={currentView} 
-        onViewChange={setCurrentView}
-        onAuthClick={handleAuthClick}
-      />
-      
-      <main className="content-container">
-        {currentView === 'create' && <CreateView onNavigateToJournal={() => setCurrentView('journal')} />}
-        {currentView === 'journal' && <JournalView />}
-        {currentView === 'settings' && <SettingsView onShowAuth={handleAuthClick} />}
-      </main>
+      <Suspense fallback={<LoadingSpinner />}>
+        <HeaderComponent 
+          currentView={currentView} 
+          onViewChange={setCurrentView}
+          onAuthClick={handleAuthClick}
+        />
+        
+        <main className={isMobile ? "" : "content-container"}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[400px]">
+              <LoadingSpinner />
+            </div>
+          }>
+            {currentView === 'create' && (
+              <CreateComponent onNavigateToJournal={() => setCurrentView('journal')} />
+            )}
+            {currentView === 'journal' && <JournalView />}
+            {currentView === 'settings' && (
+              <SettingsView onShowAuth={handleAuthClick} />
+            )}
+          </Suspense>
+        </main>
 
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={handleCloseModal}
-      />
-      
-      <HelpModal 
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
-      
-      <FloatingHelpButton onClick={() => setShowHelpModal(true)} />
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={handleCloseModal}
+        />
+        
+        <HelpModal 
+          isOpen={showHelpModal}
+          onClose={() => setShowHelpModal(false)}
+        />
+        
+        <FloatingHelpButton onClick={() => setShowHelpModal(true)} />
+      </Suspense>
     </div>
   );
 };
 
 const App = () => {
   return (
-    <AuthProvider>
-      <DreamLogApp />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <DreamLogApp />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
