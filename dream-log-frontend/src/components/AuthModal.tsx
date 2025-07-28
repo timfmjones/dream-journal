@@ -116,7 +116,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           {/* Title */}
           <div style={{ marginBottom: '24px' }}>
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1F2937', marginBottom: '8px', margin: 0 }}>
-              Welcome to Dream Log
+              Welcome to DreamSprout
             </h2>
             <p style={{ color: '#6B7280', margin: 0 }}>
               Sign in to save your dreams across devices

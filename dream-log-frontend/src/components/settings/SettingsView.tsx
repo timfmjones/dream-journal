@@ -322,7 +322,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
         <div className="settings-section" style={{ borderBottom: 'none' }}>
           <h3>About</h3>
           <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6', marginBottom: '16px' }}>
-            Dream Log transforms your dreams into magical fairy tales and provides insightful analysis using AI. 
+            DreamSprout transforms your dreams into magical fairy tales and provides insightful analysis using AI. 
             Record your dreams through text or voice, discuss to generate a fairy tale with or without illustrations, 
             get dream analysis, or simply save your dream for later.
           </p>

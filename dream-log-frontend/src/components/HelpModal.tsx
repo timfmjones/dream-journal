@@ -71,7 +71,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               color: '#1F2937',
               margin: 0
             }}>
-              Dream Log Help
+              DreamSprout Help
             </h2>
           </div>
           
@@ -150,10 +150,10 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   marginBottom: '12px',
                   margin: '0 0 12px 0'
                 }}>
-                  Welcome to Dream Log! 🌙
+                  Welcome to DreamSprout! 🌙
                 </h3>
                 <p style={{ color: '#6B7280', lineHeight: '1.6', margin: 0 }}>
-                  Dream Log helps you record, transform, and analyze your dreams. Here's how to get started:
+                  DreamSprout helps you record, transform, and analyze your dreams. Here's how to get started:
                 </p>
               </div>
 
@@ -369,7 +369,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   </h4>
                   <p style={{ margin: 0, color: '#6B7280', fontSize: '14px', lineHeight: '1.5' }}>
                     Set your default story preferences, manage your account, view statistics,
-                    and export your dream data. Make Dream Log work the way you want it to.
+                    and export your dream data. Make DreamSprout work the way you want it to.
                   </p>
                 </div>
               </div>

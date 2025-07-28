@@ -50,7 +50,7 @@ const Logo: React.FC<LogoProps> = ({
           lineHeight: 1.2,
           textAlign: orientation === 'vertical' ? 'center' : 'left'
         }}>
-          DREAM LOG
+          DreamSprout
         </div>
       )}
     </div>
