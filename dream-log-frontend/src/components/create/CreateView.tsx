@@ -26,7 +26,7 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [storyTone, setStoryTone] = useState<StoryTone>('whimsical');
   const [storyLength, setStoryLength] = useState<StoryLength>('medium');
-  const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
+  const [inputMode, setInputMode] = useState<'text' | 'voice'>('voice');
   const [generatedImages, setGeneratedImages] = useState<any[]>([]);
   const [transcribedText, setTranscribedText] = useState('');
   const [generationMode, setGenerationMode] = useState<GenerationMode>('none');
@@ -159,7 +159,7 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
     <div>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-          <Logo size="large" showText={true} orientation="vertical" />
+          <Logo size="large" showText={false} />
         </div>
         <p style={{ fontSize: '18px', color: '#666' }}>Transform your dreams into magical stories</p>
       </div>

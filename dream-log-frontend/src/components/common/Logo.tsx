@@ -1,7 +1,6 @@
 // src/components/common/Logo.tsx
 
 import React from 'react';
-import DreamLogIcon from './DreamLogIcon';
 
 interface LogoProps {
   size?: 'small' | 'large';
@@ -32,8 +31,17 @@ const Logo: React.FC<LogoProps> = ({
         background: 'transparent'
       }}
     >
-      <DreamLogIcon width={iconSize} color={color} />
-      {showText && !showText && ( // Hide text since it's now part of the logo
+      <img 
+        src="/dream-log-icon.svg" 
+        alt="Dream Log" 
+        width={iconSize} 
+        height={iconSize}
+        style={{ 
+          display: 'block',
+          background: 'transparent'
+        }}
+      />
+      {showText && (
         <div style={{ 
           fontSize: fontSize, 
           fontWeight: '700', 
