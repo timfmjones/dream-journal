@@ -15,7 +15,7 @@ const Logo: React.FC<LogoProps> = ({
   size = 'small', 
   showText = false,
   orientation = 'horizontal',
-  color = '#6B46C1',
+  color = '#422163',
   textColor = '#1a1a1a'
 }) => {
   const iconSize = size === 'large' ? 80 : 32;
@@ -28,11 +28,11 @@ const Logo: React.FC<LogoProps> = ({
         display: 'flex', 
         alignItems: 'center',
         flexDirection: orientation === 'vertical' ? 'column' : 'row',
-        gap: gap
+        gap: showText ? gap : 0
       }}
     >
-      <DreamLogIcon width={iconSize} height={iconSize} color={color} />
-      {showText && (
+      <DreamLogIcon width={iconSize} color={color} />
+      {showText && !showText && ( // Hide text since it's now part of the logo
         <div style={{ 
           fontSize: fontSize, 
           fontWeight: '700', 
