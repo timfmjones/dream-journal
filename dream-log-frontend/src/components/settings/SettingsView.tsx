@@ -74,6 +74,27 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
     localStorage.setItem('dreamLogPreferences', JSON.stringify(preferences));
   };
 
+  // Calculate local stats for guest users
+  const getLocalStats = () => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const dreamsThisMonth = dreams.filter(dream => {
+      const dreamDate = new Date(dream.date);
+      return dreamDate.getMonth() === currentMonth && dreamDate.getFullYear() === currentYear;
+    }).length;
+
+    const favoriteDreams = dreams.filter(dream => dream.isFavorite).length;
+
+    return {
+      totalDreams: dreams.length,
+      dreamsThisMonth,
+      favoriteDreams
+    };
+  };
+
+  const localStats = getLocalStats();
+
   return (
     <div className="settings-container">
       <div className="settings-header">
@@ -221,15 +242,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Total Dreams Saved</div>
-              <div className="stat-value">{dreams.length}</div>
+              <div className="stat-value">{user && !isGuest && stats ? stats.totalDreams : localStats.totalDreams}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Dreams This Month</div>
-              <div className="stat-value">{stats?.dreamsThisMonth || 0}</div>
+              <div className="stat-value">{user && !isGuest && stats ? stats.dreamsThisMonth : localStats.dreamsThisMonth}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Favorite Dreams</div>
+              <div className="stat-value">{user && !isGuest && stats ? stats.favoriteDreams : localStats.favoriteDreams}</div>
             </div>
           </div>
           
-          {user && !isGuest && stats?.averageLucidity !== null && stats.averageLucidity !== undefined && (
+          {user && !isGuest && stats && stats.averageLucidity !== null && stats.averageLucidity !== undefined && (
             <div style={{ marginTop: '16px' }}>
               <div className="form-label">Average Lucidity</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

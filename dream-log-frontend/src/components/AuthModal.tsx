@@ -3,38 +3,12 @@
 import React from 'react';
 import { User, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import Logo from './common/Logo';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-// Logo Component
-const DreamLogLogo: React.FC<{ size?: 'small' | 'large' }> = ({ size = 'small' }) => (
-  <div 
-    style={{
-      width: size === 'large' ? '64px' : '32px',
-      height: size === 'large' ? '64px' : '32px',
-      background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 100%)',
-      borderRadius: size === 'large' ? '20px' : '12px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-    }}
-  >
-    <div 
-      style={{
-        width: size === 'large' ? '36px' : '20px',
-        height: size === 'large' ? '36px' : '20px',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='white'%3E%3Crect x='10' y='15' width='80' height='70' rx='8' ry='8' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M25 35 L35 45 L25 55 M45 55 L75 55' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='30' cy='25' r='2' fill='white'/%3E%3Ccircle cx='40' cy='25' r='2' fill='white'/%3E%3Ccircle cx='50' cy='25' r='2' fill='white'/%3E%3Cpath d='M20 8 Q30 3 40 8 Q50 3 60 8 Q70 3 80 8' stroke='white' stroke-width='2' fill='none'/%3E%3C/g%3E%3C/svg%3E")`,
-        backgroundSize: 'contain',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center'
-      }}
-    />
-  </div>
-);
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { signInWithGoogle, continueAsGuest } = useAuth();
@@ -136,7 +110,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div style={{ textAlign: 'center' }}>
           {/* Logo */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-            <DreamLogLogo size="large" />
+            <Logo size="large" />
           </div>
 
           {/* Title */}

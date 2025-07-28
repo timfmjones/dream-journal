@@ -12,9 +12,10 @@ interface DreamCardProps {
 
 const DreamCard: React.FC<DreamCardProps> = ({ dream, onClick, onToggleFavorite }) => {
   // Get the first 150 characters of the dream as excerpt
-  const excerpt = dream.originalDream.length > 150 
-    ? dream.originalDream.substring(0, 150) + '...' 
-    : dream.originalDream;
+  const dreamText = dream.originalDream || '';
+  const excerpt = dreamText.length > 150 
+    ? dreamText.substring(0, 150) + '...' 
+    : dreamText;
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click

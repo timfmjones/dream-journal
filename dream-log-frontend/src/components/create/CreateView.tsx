@@ -7,6 +7,7 @@ import GenerationOptions from './GenerationOptions';
 import StoryOptions from './StoryOptions';
 import GeneratedStory from './GeneratedStory';
 import GeneratedAnalysis from './GeneratedAnalysis';
+import Logo from '../common/Logo';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { useDreams } from '../../hooks/useDreams';
 import { api } from '../../services/api';
@@ -157,12 +158,9 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   return (
     <div>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-          <div className="logo-container large">
-            <div className="logo-icon large" />
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+          <Logo size="large" showText={true} orientation="vertical" />
         </div>
-        <h1 style={{ fontSize: '36px', fontWeight: '700', color: '#1a1a1a', marginBottom: '8px' }}>Dream Log</h1>
         <p style={{ fontSize: '18px', color: '#666' }}>Transform your dreams into magical stories</p>
       </div>
 

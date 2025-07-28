@@ -36,10 +36,12 @@ export const dreamService = {
           // Transform backend dream format to frontend format if needed
           return dreams.map((dream: any) => ({
             ...dream,
+            originalDream: dream.dreamText || dream.originalDream || '', // Map backend dreamText to frontend originalDream
             audioBlob: dream.audioUrl ? undefined : dream.audioBlob, // Don't load audio from server
             inputMode: dream.hasAudio ? 'voice' : 'text',
             tone: dream.storyTone || 'whimsical',
-            length: dream.storyLength || 'medium'
+            length: dream.storyLength || 'medium',
+            isFavorite: dream.isFavorite || false
           }));
         }
       } catch (error) {
@@ -136,10 +138,18 @@ export const dreamService = {
           return {
             ...updates,
             id: data.dream.id,
-            originalDream: data.dream.dreamText || updates.originalDream,
-            tone: data.dream.storyTone || updates.tone,
-            length: data.dream.storyLength || updates.length,
-            isFavorite: data.dream.isFavorite
+            title: data.dream.title || updates.title,
+            originalDream: data.dream.dreamText || updates.originalDream || '',
+            story: data.dream.story || updates.story,
+            analysis: data.dream.analysis || updates.analysis,
+            tone: data.dream.storyTone || updates.tone || 'whimsical',
+            length: data.dream.storyLength || updates.length || 'medium',
+            isFavorite: data.dream.isFavorite,
+            date: data.dream.date || updates.date,
+            inputMode: data.dream.hasAudio ? 'voice' : 'text',
+            images: data.dream.images || updates.images,
+            userId: data.dream.userId,
+            userEmail: data.dream.userEmail
           } as Dream;
         }
       } catch (error) {
@@ -165,11 +175,23 @@ export const dreamService = {
         const result = await api.toggleDreamFavorite(dreamId);
         if (result.success && result.dream) {
           return {
-            ...result.dream,
-            originalDream: result.dream.dreamText,
+            id: result.dream.id,
+            title: result.dream.title || 'Untitled Dream',
+            originalDream: result.dream.dreamText || '',
+            story: result.dream.story,
+            analysis: result.dream.analysis,
             tone: result.dream.storyTone || 'whimsical',
             length: result.dream.storyLength || 'medium',
             inputMode: result.dream.hasAudio ? 'voice' : 'text',
+            date: result.dream.date || new Date().toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            }),
+            images: result.dream.images,
+            isFavorite: result.dream.isFavorite,
+            userId: result.dream.userId,
+            userEmail: result.dream.userEmail
           } as Dream;
         }
       } catch (error) {

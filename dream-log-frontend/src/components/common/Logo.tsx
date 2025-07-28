@@ -1,15 +1,51 @@
 // src/components/common/Logo.tsx
 
 import React from 'react';
+import DreamLogIcon from './DreamLogIcon';
 
 interface LogoProps {
   size?: 'small' | 'large';
+  showText?: boolean;
+  orientation?: 'horizontal' | 'vertical';
+  color?: string;
+  textColor?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 'small' }) => (
-  <div className={`logo-container ${size === 'large' ? 'large' : ''}`}>
-    <div className={`logo-icon ${size === 'large' ? 'large' : ''}`} />
-  </div>
-);
+const Logo: React.FC<LogoProps> = ({ 
+  size = 'small', 
+  showText = false,
+  orientation = 'horizontal',
+  color = '#6B46C1',
+  textColor = '#1a1a1a'
+}) => {
+  const iconSize = size === 'large' ? 80 : 32;
+  const fontSize = size === 'large' ? '28px' : '20px';
+  const gap = size === 'large' ? '16px' : '12px';
+  
+  return (
+    <div 
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        flexDirection: orientation === 'vertical' ? 'column' : 'row',
+        gap: gap
+      }}
+    >
+      <DreamLogIcon width={iconSize} height={iconSize} color={color} />
+      {showText && (
+        <div style={{ 
+          fontSize: fontSize, 
+          fontWeight: '700', 
+          color: textColor,
+          letterSpacing: '0.5px',
+          lineHeight: 1.2,
+          textAlign: orientation === 'vertical' ? 'center' : 'left'
+        }}>
+          DREAM LOG
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default Logo;

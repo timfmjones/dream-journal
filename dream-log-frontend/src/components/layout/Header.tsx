@@ -3,6 +3,7 @@
 import React from 'react';
 import { Home, Book, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import Logo from '../common/Logo';
 import type { ViewType } from '../../types';
 
 interface HeaderProps {
@@ -25,10 +26,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onViewChange, onAuthClick 
       <div className="content-container">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="logo-container">
-              <div className="logo-icon" />
-            </div>
-            <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1a1a1a', margin: 0 }}>Dream Log</h1>
+            <Logo size="small" showText={true} />
           </div>
           
           <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
