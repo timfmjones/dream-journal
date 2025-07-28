@@ -29,8 +29,8 @@ const CreateView: React.FC<CreateViewProps> = ({ onNavigateToJournal }) => {
   const [inputMode, setInputMode] = useState<'text' | 'voice'>('voice');
   const [generatedImages, setGeneratedImages] = useState<any[]>([]);
   const [transcribedText, setTranscribedText] = useState('');
-  const [generationMode, setGenerationMode] = useState<GenerationMode>('none');
-  const [generateImages, setGenerateImages] = useState(true);
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('story');
+  const [generateImages, setGenerateImages] = useState(false);
   
   const { saveDream } = useDreams();
   const {
