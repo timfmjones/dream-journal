@@ -1,7 +1,7 @@
 // src/components/journal/JournalView.tsx
 
 import React, { useState } from 'react';
-import { Search, Calendar, Filter, Star } from 'lucide-react';
+import { Search, Filter, Star } from 'lucide-react';
 import DreamCard from './DreamCard';
 import DreamDetail from './DreamDetail';
 import EmptyJournal from './EmptyJournal';
@@ -24,7 +24,7 @@ const JournalView: React.FC = () => {
     try {
       const storyData = await api.generateStory(dream.originalDream, dream.tone, dream.length);
       
-      let imageData = { images: [] };
+      let imageData: { images: any[] } = { images: [] };
       if (generateImages) {
         imageData = await api.generateImages(storyData.story, dream.tone);
       }
@@ -34,7 +34,7 @@ const JournalView: React.FC = () => {
         images: imageData.images
       };
       
-      const updatedDream = await updateDream(dream.id, updates);
+      await updateDream(dream.id, updates);
       setSelectedDream({ ...dream, ...updates });
     } catch (error) {
       console.error('Failed to generate story:', error);
@@ -53,7 +53,7 @@ const JournalView: React.FC = () => {
         analysis: analysisData.analysis
       };
       
-      const updatedDream = await updateDream(dream.id, updates);
+      await updateDream(dream.id, updates);
       setSelectedDream({ ...dream, ...updates });
     } catch (error) {
       console.error('Failed to analyze dream:', error);
@@ -195,7 +195,7 @@ const JournalView: React.FC = () => {
               key={dream.id}
               dream={dream}
               onClick={() => setSelectedDream(dream)}
-              onToggleFavorite={(e) => handleToggleFavorite(dream.id)}
+              onToggleFavorite={() => handleToggleFavorite(dream.id)}
             />
           ))}
         </div>

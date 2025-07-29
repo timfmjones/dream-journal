@@ -1,6 +1,7 @@
 // src/services/api.ts
 
 import { API_BASE_URL } from '../utils/constants';
+import { auth } from '../config/firebase';
 
 // Helper to get auth token
 const getAuthHeaders = async (): Promise<HeadersInit> => {
@@ -10,10 +11,8 @@ const getAuthHeaders = async (): Promise<HeadersInit> => {
   
   // Get auth token if available
   try {
-    const { auth } = await import('../config/firebase');
-    const user = auth.currentUser;
-    if (user) {
-      const token = await user.getIdToken();
+    if (auth && auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
       headers['Authorization'] = `Bearer ${token}`;
     }
   } catch (error) {

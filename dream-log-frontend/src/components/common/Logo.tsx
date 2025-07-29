@@ -6,7 +6,6 @@ interface LogoProps {
   size?: 'small' | 'large';
   showText?: boolean;
   orientation?: 'horizontal' | 'vertical';
-  color?: string;
   textColor?: string;
 }
 
@@ -14,7 +13,6 @@ const Logo: React.FC<LogoProps> = ({
   size = 'small', 
   showText = false,
   orientation = 'horizontal',
-  color = '#6B46C1',
   textColor = '#1a1a1a'
 }) => {
   const iconSize = size === 'large' ? 80 : 32;

@@ -1,7 +1,7 @@
 // src/components/journal/DreamCard.tsx
 
 import React from 'react';
-import { Wand2, Brain, Mic, FileText, Star } from 'lucide-react';
+import { Wand2, Brain, Mic, Star } from 'lucide-react';
 import type { Dream } from '../../types';
 
 interface DreamCardProps {

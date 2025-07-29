@@ -168,7 +168,7 @@ export const dreamService = {
     return updatedDream;
   },
 
-  // NEW METHOD: Toggle favorite status
+  // Fixed toggleDreamFavorite with proper return statement
   async toggleDreamFavorite(dreamId: string, user: User | null, isGuest: boolean): Promise<Dream | null> {
     if (user && !isGuest) {
       try {
@@ -194,6 +194,8 @@ export const dreamService = {
             userEmail: result.dream.userEmail
           } as Dream;
         }
+        // Return null if the result is not successful
+        return null;
       } catch (error) {
         console.error('Failed to toggle favorite on server:', error);
         throw error;

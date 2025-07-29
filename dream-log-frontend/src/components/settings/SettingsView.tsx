@@ -19,7 +19,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
   const [storyLength, setStoryLength] = useState<StoryLength>('medium');
   const [generateImages, setGenerateImages] = useState(true);
   const [stats, setStats] = useState<UserStats | null>(null);
-  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     if (user && !isGuest) {
@@ -37,14 +36,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onShowAuth }) => {
   }, [user, isGuest]);
 
   const loadUserStats = async () => {
-    setLoadingStats(true);
     try {
       const userStats = await api.getUserStats();
       setStats(userStats);
     } catch (error) {
       console.error('Failed to load user stats:', error);
-    } finally {
-      setLoadingStats(false);
     }
   };
 

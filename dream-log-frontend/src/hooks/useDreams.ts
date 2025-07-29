@@ -16,20 +16,24 @@ export const useDreams = () => {
     setLoading(true);
     try {
       const loadedDreams = await dreamService.loadDreams(user, isGuest, favoritesOnly);
-      setDreams(loadedDreams);
       
-      // If we get pagination info from the backend, use it
-      if (loadedDreams && typeof loadedDreams === 'object' && 'dreams' in loadedDreams) {
-        setDreams(loadedDreams.dreams);
-        setTotal(loadedDreams.total || loadedDreams.dreams.length);
-        setHasMore(loadedDreams.hasMore || false);
-      } else {
+      // Handle the response which should always be Dream[]
+      if (Array.isArray(loadedDreams)) {
         setDreams(loadedDreams);
         setTotal(loadedDreams.length);
+        setHasMore(false);
+      } else {
+        // Fallback in case the response is not what we expect
+        console.error('Unexpected response format from loadDreams:', loadedDreams);
+        setDreams([]);
+        setTotal(0);
         setHasMore(false);
       }
     } catch (error) {
       console.error('Failed to load dreams:', error);
+      setDreams([]);
+      setTotal(0);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }

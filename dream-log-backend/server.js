@@ -1,4 +1,4 @@
-// server.js - Dream Log Backend with PostgreSQL/Prisma
+// server.js - Production-Ready Dream Log Backend
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -6,82 +6,159 @@ const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
 const { verifyToken, requireAuth } = require('./middleware/auth');
 const db = require('./services/database');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.openai.com"],
+    },
+  },
+  crossOriginEmbedderPolicy: !isDevelopment,
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+      : [process.env.FRONTEND_URL || 'http://localhost:5173'];
+    
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
-const storyLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // limit story generation to 5 per minute
-  message: 'Story generation rate limit exceeded. Please wait a moment.'
-});
+app.use(cors(corsOptions));
 
-const imageLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 3, // limit image generation to 3 per minute
-  message: 'Image generation rate limit exceeded. Please wait a moment.'
-});
+// Compression middleware
+app.use(compression());
 
-const analysisLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // limit analysis to 5 per minute
-  message: 'Dream analysis rate limit exceeded. Please wait a moment.'
-});
+// Logging middleware
+if (isDevelopment) {
+  app.use(morgan('dev'));
+} else {
+  // Create a write stream for access logs
+  const accessLogStream = fs.createWriteStream(
+    path.join(__dirname, 'access.log'),
+    { flags: 'a' }
+  );
+  app.use(morgan('combined', { stream: accessLogStream }));
+}
 
-const ttsLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // limit TTS requests to 10 per minute
-  message: 'Text-to-speech rate limit exceeded. Please wait a moment.'
-});
+// Rate limiting with Redis support (if available)
+const createRateLimiter = (windowMs, max, message) => {
+  const config = {
+    windowMs: windowMs || 15 * 60 * 1000,
+    max: max || 100,
+    message: message || 'Too many requests, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      res.status(429).json({
+        error: message || 'Too many requests, please try again later.',
+        retryAfter: Math.ceil(windowMs / 1000)
+      });
+    }
+  };
 
-app.use(limiter);
+  // In production, you might want to use Redis store
+  // if (process.env.REDIS_URL) {
+  //   const RedisStore = require('rate-limit-redis');
+  //   config.store = new RedisStore({
+  //     client: redisClient,
+  //     prefix: 'rl:',
+  //   });
+  // }
+
+  return rateLimit(config);
+};
+
+// Apply rate limiters
+const generalLimiter = createRateLimiter(
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  'Too many requests from this IP, please try again later.'
+);
+
+const storyLimiter = createRateLimiter(60 * 1000, 5, 'Story generation rate limit exceeded. Please wait a moment.');
+const imageLimiter = createRateLimiter(60 * 1000, 3, 'Image generation rate limit exceeded. Please wait a moment.');
+const analysisLimiter = createRateLimiter(60 * 1000, 5, 'Dream analysis rate limit exceeded. Please wait a moment.');
+const ttsLimiter = createRateLimiter(60 * 1000, 10, 'Text-to-speech rate limit exceeded. Please wait a moment.');
+
+app.use(generalLimiter);
+
+// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Multer setup for audio file uploads
+// Trust proxy for accurate rate limiting behind reverse proxies
+app.set('trust proxy', 1);
+
+// Health check endpoint (no auth required)
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'unknown';
+  
+  try {
+    await db.prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'healthy';
+  } catch (error) {
+    dbStatus = 'unhealthy';
+    console.error('Database health check failed:', error);
+  }
+
+  const healthData = {
+    status: dbStatus === 'healthy' ? 'healthy' : 'degraded',
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+    services: {
+      database: dbStatus,
+      openai: !!process.env.OPENAI_API_KEY,
+      firebase: !!process.env.FIREBASE_PROJECT_ID
+    }
+  };
+
+  const statusCode = dbStatus === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(healthData);
+});
+
+// Multer setup with better error handling
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: (parseInt(process.env.MAX_FILE_SIZE_MB) || 10) * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('audio/')) {
+    const allowedMimeTypes = ['audio/wav', 'audio/webm', 'audio/mpeg', 'audio/mp4', 'audio/ogg'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only audio files are allowed!'), false);
+      cb(new Error('Invalid file type. Only audio files are allowed.'), false);
     }
   }
 });
-
-// API Configuration
-const API_CONFIG = {
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: 'https://api.openai.com/v1',
-  },
-  stability: {
-    apiKey: process.env.STABILITY_API_KEY,
-    baseURL: 'https://api.stability.ai/v1',
-  }
-};
 
 // Middleware to attach database user to request
 const attachDbUser = async (req, res, next) => {
@@ -96,21 +173,66 @@ const attachDbUser = async (req, res, next) => {
       req.dbUser = dbUser;
     } catch (error) {
       console.error('Error attaching DB user:', error);
+      // Continue without dbUser - let individual endpoints handle this
     }
   }
   next();
 };
 
-// Utility function to make API calls
-async function makeAPICall(url, options) {
-  const response = await fetch(url, options);
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(`API Error: ${response.status} - ${error.message || 'Unknown error'}`);
+// API Configuration with validation
+const API_CONFIG = {
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.openai.com/v1',
   }
-  
-  return response.json();
+};
+
+// Validate required environment variables
+const requiredEnvVars = ['OPENAI_API_KEY', 'DATABASE_URL', 'FIREBASE_PROJECT_ID'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars);
+  if (!isDevelopment) {
+    process.exit(1);
+  }
+}
+
+// Import route handlers (create these as separate modules for better organization)
+// For now, including inline...
+
+// Utility function to make API calls with retries
+async function makeAPICall(url, options, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        
+        // Don't retry on client errors (4xx)
+        if (response.status >= 400 && response.status < 500) {
+          throw new Error(`API Error: ${response.status} - ${error.message || 'Client error'}`);
+        }
+        
+        // Retry on server errors (5xx) or rate limits
+        if (i < retries - 1 && (response.status >= 500 || response.status === 429)) {
+          const delay = Math.min(1000 * Math.pow(2, i), 10000); // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        throw new Error(`API Error: ${response.status} - ${error.message || 'Unknown error'}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      
+      // Network errors - retry
+      const delay = Math.min(1000 * Math.pow(2, i), 10000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
 }
 
 // Helper function to extract story segments
@@ -135,12 +257,11 @@ function extractStorySegments(story) {
   };
 }
 
-// Dreams endpoints with PostgreSQL
+// Dreams endpoints
 app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
   try {
     if (!req.dbUser) {
-      // Guest mode - no saved dreams from server
-      return res.json({ dreams: [] });
+      return res.json({ dreams: [], total: 0, hasMore: false });
     }
 
     const { 
@@ -152,7 +273,8 @@ app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
       endDate,
       mood,
       orderBy = 'createdAt',
-      order = 'desc'
+      order = 'desc',
+      favoritesOnly = false
     } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -165,7 +287,8 @@ app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
       tags: tags ? tags.split(',') : undefined,
       startDate,
       endDate,
-      mood
+      mood,
+      favoritesOnly: favoritesOnly === 'true'
     });
 
     res.json(result);
@@ -178,7 +301,6 @@ app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
 app.post('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
   try {
     if (!req.dbUser) {
-      // Guest mode - don't save to server
       return res.json({ 
         success: true, 
         message: 'Dream saved locally (guest mode)',
@@ -199,7 +321,8 @@ app.post('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
       tags: req.body.tags || [],
       mood: req.body.mood,
       lucidity: req.body.lucidity,
-      images: req.body.images || []
+      images: req.body.images || [],
+      isFavorite: req.body.isFavorite || false
     };
 
     const dream = await db.createDream(req.dbUser.id, dreamData);
@@ -228,7 +351,6 @@ app.put('/api/dreams/:id', requireAuth, attachDbUser, async (req, res) => {
       images: req.body.images
     };
 
-    // Remove undefined values
     Object.keys(updates).forEach(key => 
       updates[key] === undefined && delete updates[key]
     );
@@ -245,8 +367,6 @@ app.put('/api/dreams/:id', requireAuth, attachDbUser, async (req, res) => {
   }
 });
 
-
-// Toggle favorite status endpoint
 app.patch('/api/dreams/:id/favorite', requireAuth, attachDbUser, async (req, res) => {
   try {
     const dream = await db.toggleDreamFavorite(req.params.id, req.dbUser.id);
@@ -262,48 +382,6 @@ app.patch('/api/dreams/:id/favorite', requireAuth, attachDbUser, async (req, res
     } else {
       res.status(500).json({ error: 'Failed to toggle favorite' });
     }
-  }
-});
-
-// Also update the GET /api/dreams endpoint to support favorites filter
-app.get('/api/dreams', verifyToken, attachDbUser, async (req, res) => {
-  try {
-    if (!req.dbUser) {
-      // Guest mode - no saved dreams from server
-      return res.json({ dreams: [] });
-    }
-
-    const { 
-      page = 1, 
-      limit = 20, 
-      search, 
-      tags, 
-      startDate, 
-      endDate,
-      mood,
-      orderBy = 'createdAt',
-      order = 'desc',
-      favoritesOnly = false  // NEW PARAMETER
-    } = req.query;
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const result = await db.getDreamsByUser(req.dbUser.id, {
-      skip,
-      take: parseInt(limit),
-      orderBy,
-      order,
-      search,
-      tags: tags ? tags.split(',') : undefined,
-      startDate,
-      endDate,
-      mood,
-      favoritesOnly: favoritesOnly === 'true'  // NEW PARAMETER
-    });
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching dreams:', error);
-    res.status(500).json({ error: 'Failed to fetch dreams' });
   }
 });
 
@@ -460,7 +538,7 @@ Guidelines:
   }
 });
 
-// Dream Analysis endpoint with database storage
+// Dream Analysis endpoint
 app.post('/api/analyze-dream', analysisLimiter, verifyToken, attachDbUser, async (req, res) => {
   try {
     const { dreamText, dreamId } = req.body;
@@ -505,7 +583,6 @@ Guidelines:
     
     // Save analysis to database if user is authenticated and dreamId provided
     if (req.dbUser && dreamId) {
-      // Extract themes and emotions from analysis (simple keyword extraction)
       const emotionKeywords = ['happy', 'sad', 'anxious', 'peaceful', 'excited', 'fearful', 'content', 'frustrated'];
       const themeKeywords = ['freedom', 'control', 'love', 'loss', 'growth', 'conflict', 'journey', 'transformation'];
       
@@ -564,7 +641,6 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
     const baseStyle = stylePrompts[tone] || stylePrompts.whimsical;
     const commonStyle = `${baseStyle}, high quality, detailed artwork, storybook illustration, beautiful composition, no text, no words, no letters, no writing, text-free illustration`;
 
-    // Extract story segments for different scenes
     const segments = extractStorySegments(story);
     
     const scenes = [
@@ -628,7 +704,7 @@ app.post('/api/generate-images', imageLimiter, async (req, res) => {
   }
 });
 
-// Text-to-Speech endpoint using OpenAI
+// Text-to-Speech endpoint
 app.post('/api/text-to-speech', ttsLimiter, async (req, res) => {
   try {
     const { text, voice = 'alloy', speed = 1.0 } = req.body;
@@ -641,7 +717,6 @@ app.post('/api/text-to-speech', ttsLimiter, async (req, res) => {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    // OpenAI TTS voices: alloy, echo, fable, onyx, nova, shimmer
     const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
     const selectedVoice = validVoices.includes(voice) ? voice : 'alloy';
 
@@ -655,7 +730,7 @@ app.post('/api/text-to-speech', ttsLimiter, async (req, res) => {
         model: 'tts-1',
         input: text,
         voice: selectedVoice,
-        speed: Math.max(0.25, Math.min(4.0, speed)) // Clamp speed between 0.25 and 4.0
+        speed: Math.max(0.25, Math.min(4.0, speed))
       })
     });
 
@@ -665,17 +740,14 @@ app.post('/api/text-to-speech', ttsLimiter, async (req, res) => {
       throw new Error(`TTS failed: ${response.status}`);
     }
 
-    // Get the audio data as a buffer
     const audioBuffer = await response.arrayBuffer();
     
-    // Set appropriate headers for audio streaming
     res.set({
       'Content-Type': 'audio/mpeg',
       'Content-Length': audioBuffer.byteLength,
-      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      'Cache-Control': 'public, max-age=3600'
     });
 
-    // Send the audio buffer
     res.send(Buffer.from(audioBuffer));
 
   } catch (error) {
@@ -695,34 +767,24 @@ app.get('/api/stats', requireAuth, attachDbUser, async (req, res) => {
   }
 });
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  let dbStatus = 'unknown';
-  
-  try {
-    await db.prisma.$queryRaw`SELECT 1`;
-    dbStatus = 'healthy';
-  } catch (error) {
-    dbStatus = 'unhealthy';
-    console.error('Database health check failed:', error);
-  }
-
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    apis: {
-      openai: !!API_CONFIG.openai.apiKey,
-      stability: !!API_CONFIG.stability.apiKey,
-      firebase: !!process.env.FIREBASE_PROJECT_ID
-    },
-    database: dbStatus
-  });
-});
-
 // Error handling middleware
 app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large' });
+    }
+    return res.status(400).json({ error: error.message });
+  }
+
   console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
+  
+  const status = error.status || 500;
+  const message = isDevelopment ? error.message : 'Internal server error';
+  
+  res.status(status).json({ 
+    error: message,
+    ...(isDevelopment && { stack: error.stack })
+  });
 });
 
 // 404 handler
@@ -731,16 +793,53 @@ app.use((req, res) => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  await db.disconnect();
-  process.exit(0);
+const gracefulShutdown = async (signal) => {
+  console.log(`${signal} signal received: closing HTTP server`);
+  
+  // Stop accepting new connections
+  server.close(async () => {
+    console.log('HTTP server closed');
+    
+    // Close database connections
+    try {
+      await db.disconnect();
+      console.log('Database connections closed');
+    } catch (error) {
+      console.error('Error closing database connections:', error);
+    }
+    
+    process.exit(0);
+  });
+  
+  // Force shutdown after 30 seconds
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 30000);
+};
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  gracefulShutdown('uncaughtException');
 });
 
-app.listen(PORT, () => {
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('unhandledRejection');
+});
+
+// Start server
+const server = app.listen(PORT, () => {
   console.log(`Dream Log Backend running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`OpenAI API: ${API_CONFIG.openai.apiKey ? 'Configured' : 'Not configured'}`);
-  console.log(`Stability API: ${API_CONFIG.stability.apiKey ? 'Configured' : 'Not configured'}`);
   console.log(`Firebase Admin: ${process.env.FIREBASE_PROJECT_ID ? 'Configured' : 'Not configured'}`);
   console.log(`Database: ${process.env.DATABASE_URL ? 'Configured' : 'Not configured'}`);
 });
+
+module.exports = { app, server };

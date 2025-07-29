@@ -1,6 +1,6 @@
-// src/App.tsx - Updated to include floating help button
+// src/App.tsx - Fixed version without unused React import
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import CreateView from './components/create/CreateView';

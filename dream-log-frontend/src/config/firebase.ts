@@ -37,10 +37,11 @@ console.log('Firebase config status:', {
   authDomain: firebaseConfig.authDomain || 'NOT_SET'
 });
 
-let app;
-let auth;
-let googleProvider;
-let db;
+// Declare variables with explicit types
+let app: any;
+let auth: any;
+let googleProvider: any;
+let db: any;
 
 try {
   // Initialize Firebase
@@ -60,6 +61,10 @@ try {
   console.log('Firebase initialized successfully');
 } catch (error) {
   console.error('Error initializing Firebase:', error);
+  // Create dummy objects to prevent errors
+  auth = null;
+  googleProvider = null;
+  db = null;
 }
 
 export { auth, googleProvider, db };

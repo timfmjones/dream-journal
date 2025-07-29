@@ -17,4 +17,20 @@ export const LENGTH_OPTIONS: LengthOption[] = [
   { key: 'long', label: 'Long' }
 ];
 
-export const API_BASE_URL = 'http://localhost:3001/api';
+// Dynamic API URL based on environment
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api');
+
+// Feature flags
+export const FEATURES = {
+  VOICE_RECORDING: import.meta.env.VITE_ENABLE_VOICE_RECORDING !== 'false',
+  IMAGE_GENERATION: import.meta.env.VITE_ENABLE_IMAGE_GENERATION !== 'false',
+  ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
+};
+
+// App metadata
+export const APP_CONFIG = {
+  name: 'DreamSprout',
+  version: '2.1.0',
+  support_email: 'support@dreamsprout.app',
+};
